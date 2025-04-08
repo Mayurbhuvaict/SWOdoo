@@ -1,0 +1,12 @@
+{
+  "ictech-shopware-odoo-connector": {
+    "success": "Erfolg",
+    "successMessageCategory": "Kategorie erfolgreich speichern",
+    "successMessageCurrency": "Währung erfolgreich speichern",
+    "successMessageOrderStatus": "Bestellstatus erfolgreich speichern",
+    "successMessageSyncOrder": "Auftragssynchronisierung erfolgreich",
+    "successMessageSyncCustomer": "Kundensynchronisation erfolgreich",
+    "categoryButtonTitle": "Kategorie Sync",
+    "currencyButtonTitle": "Währung Sync"
+  }
+}

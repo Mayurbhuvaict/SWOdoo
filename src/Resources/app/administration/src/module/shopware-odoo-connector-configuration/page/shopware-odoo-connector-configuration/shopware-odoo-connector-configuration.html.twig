@@ -1,0 +1,219 @@
+{% block shopware_odoo_connector_configuration %}
+    <sw-page class="shopware-odoo-connector-configuration">
+        {% block shopware_odoo_connector_configuration_header %}
+            <template #smart-bar-header>
+                <h2>
+                    {{ $tc('sw-settings.index.title') }}
+                    <sw-icon name="regular-chevron-right-xs" small></sw-icon>
+                    {{ $tc('shopware-odoo-connector-configuration.header') }}
+                </h2>
+            </template>
+        {% endblock %}
+
+        {% block shopware_odoo_connector_configuration_actions %}
+            <template #smart-bar-actions>
+                {% block shopware_odoo_connector_configuration_actions_save %}
+                    <sw-button-process v-model:value="isSaveSuccessful"
+                                       class="sw-settings-login-registration__save-action"
+                                       variant="primary"
+                                       :isLoading="isLoading"
+                                       :disabled="isLoading"
+                                       @click="onSave">
+                        {{ $tc('global.default.save') }}
+                    </sw-button-process>
+                {% endblock %}
+            </template>
+        {% endblock %}
+
+        {% block shopware_odoo_connector_configuration_content %}
+            <template #content>
+                {% block shopware_odoo_connector_configration_saleschannel %}
+                    <sw-card-view>
+                        <sw-sales-channel-config v-model:value="config"
+                                                 ref="configComponent"
+                                                 domain="ICTECHOdooShopwareConnector.settings">
+
+                            {% block shopware_odoo_configuration_content_card_channel_config_sales_channel %}
+                                <template #select="{ onInput, selectedSalesChannelId }">
+                                    <sw-card positionIdentifier="" :title="$tc('global.entities.sales_channel', 2)">
+                                        {% block shopware_odoo_configuration_content_card_channel_config_sales_channel_card_title %}
+                                            <sw-single-select v-model:value="selectedSalesChannelId"
+                                                              labelProperty="translated.name"
+                                                              valueProperty="id"
+                                                              :isLoading="isLoading"
+                                                              :options="salesChannels"
+                                                              @change="onInput">
+                                            </sw-single-select>
+                                        {% endblock %}
+                                    </sw-card>
+                                </template>
+                            {% endblock %}
+
+                            {% block shopware_odoo_configuration_content_card_channel_config_cards %}
+                                <template #content="{ actualConfigData, allConfigs, selectedSalesChannelId }">
+                                    <div v-if="actualConfigData">
+                                        <sw-card positionIdentifier=""
+                                                 :title="$tc('shopware-odoo-connector-configuration.apiSection.url')">
+                                            <sw-container>
+                                                <div class="select-field">
+                                                    <sw-inherit-wrapper
+                                                            v-model:value="actualConfigData['ICTECHOdooShopwareConnector.settings.webUrl']"
+                                                            :inheritedValue="selectedSalesChannelId === null ? null : allConfigs['null']['ICTECHOdooShopwareConnector.settings.webUrl']"
+                                                            :customInheritationCheckFunction="checkTextFieldInheritance"
+                                                            :label="$tc('shopware-odoo-connector-configuration.apiSection.webUrl') ">
+                                                        <template #content="props">
+                                                            <sw-text-field
+                                                                    v-model:value="props.currentValue"
+                                                                    @update:value="props.updateCurrentValue"
+                                                                    :disabled="props.isInherited || !acl.can('ICTECHOdooShopwareConnector.editor')">
+                                                            </sw-text-field>
+
+                                                            <div class="button-field">
+                                                                <sw-button :isLoading="isLoadingAuth"
+                                                                           variant="primary"
+                                                                           @click="checkWebSiteCredential()">
+                                                                    {{ $tc('shopware-odoo-connector-configuration.apiSection.webUrlButton') }}
+                                                                </sw-button>
+                                                            </div>
+                                                        </template>
+                                                    </sw-inherit-wrapper>
+                                                </div>
+                                            </sw-container>
+                                        </sw-card>
+
+                                        <sw-card positionIdentifier=""
+                                                 :title="$tc('shopware-odoo-connector-configuration.general.productSalesChannelSelect')">
+                                            <sw-multi-select
+                                                    v-model:value="actualConfigData['ICTECHOdooShopwareConnector.settings.productSalesChannel']"
+                                                    labelProperty="translated.name"
+                                                    valueProperty="id"
+                                                    :isLoading="isLoading"
+                                                    :options="salesChannels"
+                                                    @update:value="onInput"
+                                            >
+                                            </sw-multi-select>
+
+                                        </sw-card>
+
+                                        <sw-card positionIdentifier=""
+                                                 :title="$tc('shopware-odoo-connector-configuration.general.syncData')">
+                                            <sw-container>
+                                                <sw-card positionIdentifier=""
+                                                         :title="$tc('shopware-odoo-connector-configuration.general.syncShopwareData')">
+                                                    <div class="shopware-odoo-configuration-manually-sync-defaultdata">
+                                                        <div class="sync-odoo-btn">
+                                                            <div class="button-field">
+                                                                <b>{{ categoryCount }}</b>
+                                                            </div>
+                                                            <div class="button-field">
+                                                                <sw-button :isLoading="isLoadingCategory"
+                                                                           variant="primary"
+                                                                           @click="fetchCategoryData()">
+                                                                    {{ $tc('shopware-odoo-connector-configuration.button.categoryButtonTitle') }}
+                                                                </sw-button>
+                                                            </div>
+                                                        </div>
+                                                        <div class="sync-odoo-btn">
+                                                            <div class="button-field">
+                                                                <b>{{ currencyCount }}</b>
+                                                            </div>
+                                                            <div class="button-field">
+                                                                <sw-button :isLoading="isLoadingCurrency"
+                                                                           variant="primary"
+                                                                           @click="fetchCurrencyData()">
+                                                                    {{ $tc('shopware-odoo-connector-configuration.button.currencyButtonTitle') }}
+                                                                </sw-button>
+                                                            </div>
+                                                        </div>
+                                                        <div class="sync-odoo-btn">
+                                                            <div class="button-field">
+                                                                <b>{{ orderStatusSyncCount }}</b>
+                                                            </div>
+                                                            <div class="button-field">
+                                                                <sw-button :isLoading="isLoadingSyncOrderStatus"
+                                                                           variant="primary"
+                                                                           @click="syncOdooOrderStatus()">
+                                                                    {{ $tc('shopware-odoo-connector-configuration.button.odooOrderStatusButtonTitle') }}
+                                                                </sw-button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </sw-card>
+                                                <sw-card positionIdentifier=""
+                                                         :title="$tc('shopware-odoo-connector-configuration.general.syncOdooData')">
+                                                    <div class="shopware-odoo-configuration-manually-sync-custom-data">
+
+                                                        <div class="sync-odoo-btn">
+                                                            <div class="button-field">
+                                                                <b>{{ customerCount }}</b>
+                                                            </div>
+                                                            <sw-button :isLoading="isLoadingSyncCustomer"
+                                                                       variant="primary"
+                                                                       @click="syncCustomerData()">
+                                                                {{ $tc('shopware-odoo-connector-configuration.button.customerButtonTitle') }}
+                                                            </sw-button>
+                                                        </div>
+                                                        <div class="sync-odoo-btn">
+                                                            <div class="button-field">
+                                                                <b>{{ orderCount }}</b>
+                                                            </div>
+
+                                                            <sw-button :isLoading="isLoadingSyncOrder"
+                                                                       variant="primary"
+                                                                       @click="syncOrderData()">
+                                                                {{ $tc('shopware-odoo-connector-configuration.button.orderButtonTitle') }}
+                                                            </sw-button>
+                                                        </div>
+                                                    </div>
+                                                </sw-card>
+                                            </sw-container>
+                                        </sw-card>
+
+
+                                        <sw-card positionIdentifier=""
+                                                 :title="$tc('shopware-odoo-connector-configuration.general.orderStatusConfigurations')">
+                                            <sw-container>
+                                                <sw-data-grid
+                                                        :data-source="defaultShopwareStatuses"
+                                                        :columns="statusDataColumn"
+                                                        :showSelection="false"
+                                                        :showActions="false"
+                                                >
+                                                    <template #column-shopwareDelivery="{ item }">
+                                                        <label>{{ item.name }}</label>
+                                                    </template>
+
+                                                    <template #column-odooDeliveryStatus="{ item }">
+                                                        <sw-single-select
+                                                                v-model:value="actualConfigData[`ICTECHOdooShopwareConnector.settings.odooDeliveryOption-${item.technicalName}`]"
+                                                                name="ICTECHOdooShopwareConnector.settings.odooOrderDeliveryOpen"
+                                                                :options="odooOrderDelivery"
+                                                                size="small"
+                                                                labelProperty="odooStatus"
+                                                                valueProperty="odooStatusKey">
+                                                        </sw-single-select>
+                                                    </template>
+
+                                                    <template #column-shopwareOrderStatus="{ item }">
+                                                        <sw-single-select
+                                                                v-model:value="actualConfigData[`ICTECHOdooShopwareConnector.settings.shopwareOrderStatus-${item.technicalName}`]"
+                                                                name="ICTECHOdooShopwareConnector.settings.orderStatusOpen"
+                                                                :options="orderStatusOptions"
+                                                                size="small"
+                                                                labelProperty="name"
+                                                                valueProperty="technicalName">
+                                                        </sw-single-select>
+                                                    </template>
+                                                </sw-data-grid>
+                                            </sw-container>
+                                        </sw-card>
+                                    </div>
+                                </template>
+                            {% endblock %}
+                        </sw-sales-channel-config>
+                    </sw-card-view>
+                {% endblock %}
+            </template>
+        {% endblock %}
+    </sw-page>
+{% endblock %}

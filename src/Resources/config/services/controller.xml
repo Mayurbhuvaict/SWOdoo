@@ -1,0 +1,83 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <services>
+        <!-- Controller -->
+        <service id="ICTECHOdooShopwareConnector\Controller\ApiController" public="true">
+            <argument type="service" id="ICTECHOdooShopwareConnector\Service\OrderStatus"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Service\ProductCreate"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Service\CategoryCreate"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Service\TaxCreate"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Service\CurrencyCreate"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Service\RuleCreate"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Service\ProductUpdate"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Service\ProductStockUpdate"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Service\InvoiceCreate"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Service\OrderCreate"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Service\ManufacturerCreate"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Controller\DefaultCategoryFetchController" public="true">
+            <argument type="service" id="ICTECHOdooShopwareConnector\Service\CategoryCreate"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Controller\DefaultCurrencyFetchController" public="true">
+            <argument type="service" id="ICTECHOdooShopwareConnector\Service\CurrencyCreate"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Controller\DefaultCustomerController" public="true">
+            <argument type="service" id="customer.repository"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Service\CustomerService"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Controller\DefaultOrderSyncController" public="true">
+            <argument type="service" id="order.repository"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Service\OrderCreate"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Controller\CheckAuthController" public="true">
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Controller\DefaultOdooOrderStatusFetchController" public="true">
+            <argument type="service" id="odoo_order_status.repository"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Controller\OdooDataSyncController" public="true">
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+        </service>
+
+    </services>
+</container>

@@ -1,0 +1,1 @@
+import './module/shopware-odoo-connector-configuration';

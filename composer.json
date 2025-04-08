@@ -1,0 +1,30 @@
+{
+    "name": "ict/ictech-odooshopwareconnector",
+    "description": "Odoo shopware connector",
+    "type": "shopware-platform-plugin",
+    "version": "1.0.1",
+    "license": "proprietary",
+    "require": {
+        "shopware/core": "^6.5 || ^6.6"
+    },
+    "extra": {
+        "shopware-plugin-class": "ICTECHOdooShopwareConnector\\ICTECHOdooShopwareConnector",
+        "label": {
+            "de-DE": "Odoo Shopware-Anschluss",
+            "en-GB": "Odoo shopware connector"
+        },
+        "manufacturerLink": {
+            "de-DE": "https://www.icreativetechnologies.com",
+            "en-GB": "https://www.icreativetechnologies.com"
+        },
+        "supportLink": {
+            "de-DE": "https://support.icreativetechnologies.com/",
+            "en-GB": "https://support.icreativetechnologies.com/"
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "ICTECHOdooShopwareConnector\\": "src/"
+        }
+    }
+}

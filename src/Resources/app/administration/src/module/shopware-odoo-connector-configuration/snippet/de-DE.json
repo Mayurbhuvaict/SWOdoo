@@ -1,0 +1,45 @@
+{
+  "shopware-odoo-connector-configuration-action": {
+    "default": {
+      "save": "Speichern Sie"
+    }
+  },
+  "shopware-odoo-connector-configuration": {
+    "apiSection": {
+      "webUrlButton": "Url-Berechtigung prüfen",
+      "webUrl": "Url eingeben",
+      "url": "Authentifizierung",
+      "errorAuthenticate": "URL ist nicht gültig",
+      "enterUrlError": "Bitte Url eingeben"
+    },
+    "header": "Shopware Odoo Connector",
+    "general": {
+      "shopwareDeliveryStatus" : "Shopware-Lieferstatus",
+      "odooDeliveryStatus" : "Odoo Lieferstatus",
+      "shopwareOrderStatus" : "Shopware Bestellstatus",
+      "productSalesChannelSelect": "Verkaufskanal für die Einstellung des Produkts auswählen",
+      "syncData": "Daten synchronisieren",
+      "syncShopwareData": "Mit Shopware-Daten synchronisieren",
+      "syncOdooData": "Mit Odoo-Daten synchronisieren",
+      "name": "Shopware Odoo Connector",
+      "mainMenuItemGeneral": "Shopware Odoo Connector",
+      "descriptionTextModule": "Shopware Odoo Connector",
+      "orderStatusConfigurations": "Bestellstatus-Konfigurationen",
+      "orderConfigurations": "Bestellungskonfigurationen"
+    },
+    "button": {
+      "categoryButtonTitle": "Kategorie Sync",
+      "currencyButtonTitle": "Währungssynchronisation",
+      "customerButtonTitle": "Kunden Sync",
+      "orderButtonTitle": "Bestellungssynchronisation",
+      "odooOrderStatusButtonTitle": "Odoo Auftragsstatus Sync",
+      "manufactureButtonTitle" : "Herstellung Sync"
+    },
+    "action": {
+      "titleSaveSuccess": "Erfolg",
+      "titleSaveError": "Fehler",
+      "messageSaveSuccess": "Daten erfolgreich gespeichert",
+      "error": "Bitte prüfen Sie, ob die Daten nicht gespeichert wurden."
+    }
+  }
+}

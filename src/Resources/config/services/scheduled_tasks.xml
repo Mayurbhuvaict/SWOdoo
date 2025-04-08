@@ -1,0 +1,150 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <services>
+        <!-- scheduledTask -->
+        <service id="ICTECHOdooShopwareConnector\Service\ScheduledTask\SyncCustomerTask">
+            <tag name="shopware.scheduled.task" />
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ScheduledTask\SyncCustomerTaskHandler">
+            <argument type="service" id="scheduled_task.repository" />
+            <argument type="service" id="ICTECHOdooShopwareConnector\Controller\DefaultCustomerController" />
+            <tag name="messenger.message_handler" />
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ScheduledTask\SyncOrderTask">
+            <tag name="shopware.scheduled.task" />
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ScheduledTask\SyncOrderTaskHandler">
+            <argument type="service" id="scheduled_task.repository" />
+            <argument type="service" id="ICTECHOdooShopwareConnector\Controller\DefaultOrderSyncController" />
+            <tag name="messenger.message_handler" />
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ScheduledTask\CategorySyncTask">
+            <tag name="shopware.scheduled.task" />
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ScheduledTask\CategorySyncTaskHandler">
+            <argument type="service" id="scheduled_task.repository" />
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig" />
+            <argument type="service" id="category.repository" />
+            <argument type="service" id="Psr\Log\LoggerInterface" />
+            <tag name="messenger.message_handler" />
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ScheduledTask\CurrencySyncTask">
+            <tag name="shopware.scheduled.task" />
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ScheduledTask\CurrencySyncTaskHandler">
+            <argument type="service" id="scheduled_task.repository" />
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig" />
+            <argument type="service" id="currency.repository" />
+            <argument type="service" id="Psr\Log\LoggerInterface" />
+            <tag name="messenger.message_handler" />
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ScheduledTask\LanguageSyncTask">
+            <tag name="shopware.scheduled.task" />
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ScheduledTask\LanguageSyncTaskHandler">
+            <argument type="service" id="scheduled_task.repository" />
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig" />
+            <argument type="service" id="language.repository" />
+            <argument type="service" id="Psr\Log\LoggerInterface" />
+            <tag name="messenger.message_handler" />
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ScheduledTask\CustomerGroupSyncTask">
+            <tag name="shopware.scheduled.task" />
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ScheduledTask\CustomerGroupSyncTaskHandler">
+            <argument type="service" id="scheduled_task.repository" />
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig" />
+            <argument type="service" id="customer_group.repository" />
+            <argument type="service" id="Psr\Log\LoggerInterface" />
+            <tag name="messenger.message_handler" />
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ScheduledTask\DeliveryTimeSyncTask">
+            <tag name="shopware.scheduled.task" />
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ScheduledTask\DeliveryTimeSyncTaskHandler">
+            <argument type="service" id="scheduled_task.repository" />
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig" />
+            <argument type="service" id="delivery_time.repository" />
+            <argument type="service" id="Psr\Log\LoggerInterface" />
+            <tag name="messenger.message_handler" />
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ScheduledTask\ProductManufacturerSyncTask">
+            <tag name="shopware.scheduled.task" />
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ScheduledTask\ProductManufacturerSyncTaskHandler">
+            <argument type="service" id="scheduled_task.repository" />
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig" />
+            <argument type="service" id="product_manufacturer.repository" />
+            <argument type="service" id="Psr\Log\LoggerInterface" />
+            <tag name="messenger.message_handler" />
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ScheduledTask\ProductSyncTask">
+            <tag name="shopware.scheduled.task" />
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ScheduledTask\ProductSyncTaskHandler">
+            <argument type="service" id="scheduled_task.repository" />
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig" />
+            <argument type="service" id="product.repository" />
+            <argument type="service" id="Psr\Log\LoggerInterface" />
+            <tag name="messenger.message_handler" />
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ScheduledTask\SalesChannelSyncTask">
+            <tag name="shopware.scheduled.task" />
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ScheduledTask\SalesChannelSyncTaskHandler">
+            <argument type="service" id="scheduled_task.repository" />
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig" />
+            <argument type="service" id="sales_channel.repository" />
+            <argument type="service" id="Psr\Log\LoggerInterface" />
+            <tag name="messenger.message_handler" />
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ScheduledTask\ShippingMethodSyncTask">
+            <tag name="shopware.scheduled.task" />
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ScheduledTask\ShippingMethodSyncTaskHandler">
+            <argument type="service" id="scheduled_task.repository" />
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig" />
+            <argument type="service" id="shipping_method.repository" />
+            <argument type="service" id="Psr\Log\LoggerInterface" />
+            <tag name="messenger.message_handler" />
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ScheduledTask\TaxSyncTask">
+            <tag name="shopware.scheduled.task" />
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ScheduledTask\TaxSyncTaskHandler">
+            <argument type="service" id="scheduled_task.repository" />
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig" />
+            <argument type="service" id="tax.repository" />
+            <argument type="service" id="Psr\Log\LoggerInterface" />
+            <tag name="messenger.message_handler" />
+        </service>
+
+    </services>
+</container>

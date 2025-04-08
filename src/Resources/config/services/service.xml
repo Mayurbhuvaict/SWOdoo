@@ -1,0 +1,126 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <services>
+        <!-- Service -->
+        <service id="ICTECHOdooShopwareConnector\Service\CategoryCreate" public="true">
+            <argument type="service" id="category.repository"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig"/>
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\CurrencyCreate" public="true">
+            <argument type="service" id="currency.repository"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig"/>
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ProductStockUpdate" public="true">
+            <argument type="service" id="product.repository"/>
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\OrderCreate" public="true">
+            <argument type="service" id="order_address.repository"/>
+            <argument type="service" id="product.repository"/>
+            <argument type="service" id="order.repository"/>
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\OrderStatus" public="true">
+            <argument type="service" id="state_machine_state.repository"/>
+            <argument type="service" id="order.repository"/>
+            <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="order_transaction.repository"/>
+            <argument type="service" id="order_delivery.repository"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\RestApi\OdooClient"/>
+            <argument type="service" id="Shopware\Core\System\StateMachine\StateMachineRegistry"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig"/>
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\CustomerService" public="true">
+            <argument type="service" id="payment_method.repository"/>
+            <argument type="service" id="language.repository"/>
+            <argument type="service" id="salutation.repository"/>
+            <argument type="service" id="customer_group.repository"/>
+            <argument type="service" id="currency.repository"/>
+            <argument type="service" id="country.repository"/>
+            <argument type="service" id="country_state.repository"/>
+            <argument type="service" id="customer.repository"/>
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ProductCreate" public="true">
+            <argument type="service" id="product.repository"/>
+            <argument type="service" id="tax.repository"/>
+            <argument type="service" id="property_group.repository"/>
+            <argument type="service" id="property_group_option.repository"/>
+            <argument type="service" id="category.repository"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Service\CategoryCreate"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Service\TaxCreate"/>
+            <argument type="service" id="Shopware\Core\Content\Media\File\FileFetcher"/>
+            <argument type="service" id="Shopware\Core\Content\Media\File\FileSaver"/>
+            <argument type="service" id="media.repository"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Service\ManufacturerCreate"/>
+            <argument type="service" id="product_manufacturer.repository"/>
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ProductUpdate" public="true">
+            <argument type="service" id="product.repository"/>
+            <argument type="service" id="tax.repository"/>
+            <argument type="service" id="category.repository"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Service\CategoryCreate"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Service\TaxCreate"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Service\ProductCreate"/>
+            <argument type="service" id="property_group.repository"/>
+            <argument type="service" id="property_group_option.repository"/>
+            <argument type="service" id="Shopware\Core\Content\Media\File\FileFetcher"/>
+            <argument type="service" id="Shopware\Core\Content\Media\File\FileSaver"/>
+            <argument type="service" id="media.repository"/>
+            <argument type="service" id="product_media.repository"/>
+            <argument type="service" id="product_category.repository"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Service\ManufacturerCreate"/>
+            <argument type="service" id="product_manufacturer.repository"/>
+            <argument type="service" id="product_visibility.repository"/>
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\TaxCreate" public="true">
+            <argument type="service" id="tax.repository"/>
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\ManufacturerCreate" public="true">
+            <argument type="service" id="product_manufacturer.repository"/>
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\RuleCreate" public="true">
+            <argument type="service" id="rule.repository"/>
+            <argument type="service" id="product.repository"/>
+            <argument type="service" id="product_price.repository"/>
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig"/>
+            <argument type="service" id="rule_condition.repository"/>
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\InvoiceCreate" public="true">
+            <argument type="service" id="Shopware\Core\Checkout\Document\Service\DocumentGenerator"/>
+            <argument type="service" id="Symfony\Component\Serializer\Encoder\DecoderInterface"/>
+            <argument type="service" id="Shopware\Core\Framework\Validation\DataValidator"/>
+            <argument type="service" id="mail_template.repository"/>
+            <argument type="service" id="order.repository"/>
+            <argument type="service" id="Shopware\Core\Content\Mail\Service\MailService"/>
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\SyncToOdoo\Currency" public="true">
+            <argument type="service" id="currency.repository"/>
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\SyncToOdoo\Product" public="true">
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Service\Installer\CustomFieldsInstaller" public="true">
+            <argument type="service" id="custom_field.repository"/>
+            <argument type="service" id="custom_field_set.repository"/>
+            <argument type="service" id="custom_field_set_relation.repository"/>
+        </service>
+
+    </services>
+</container>
