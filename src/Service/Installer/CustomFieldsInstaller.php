@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace ICTECHOdooShopwareConnector\Service\Installer;
 
@@ -26,6 +28,12 @@ class CustomFieldsInstaller
     private const ODOO_SHOPWARE_LANGUAGE = 'odoo_language';
     private const ODOO_SHOPWARE_SALESCHANNEL = 'odoo_sales_channel';
     private const ODOO_SHOPWARE_DELIVERYTIME = 'odoo_delivery_time';
+    private const ODOO_SHOPWARE_COUNTRY = 'odoo_country';
+    private const ODOO_SHOPWARE_COUNTRY_STATE = 'odoo_country_state';
+    private const ODOO_SHOPWARE_TAG = 'odoo_tag';
+    private const ODOO_SHOPWARE_SALUTATION = 'odoo_salutation';
+    private const ODOO_SHOPWARE_PAYMENT_METHOD = 'odoo_payment_method';
+
     private const CUSTOM_FIELDSET_NAME = [
         'odoo_product',
         'odoo_category',
@@ -39,6 +47,11 @@ class CustomFieldsInstaller
         'odoo_language',
         'odoo_sales_channel',
         'odoo_delivery_time',
+        'odoo_country',
+        'odoo_country_state',
+        'odoo_tag',
+        'odoo_salutation',
+        'odoo_payment_method'
     ];
     private const CUSTOM_FIELDSET = [
         [
@@ -57,8 +70,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::INT,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Odoo Product Id',
                             'de-DE' => 'Odoo Produkt Id',
+                            'en-GB' => 'Odoo Product Id',
                             Defaults::LANGUAGE_SYSTEM => 'Odoo Product Id'
                         ],
                         'customFieldType' => 'int',
@@ -70,8 +83,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::TEXT,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Odoo Product Error',
                             'de-DE' => 'Odoo-Produktfehler',
+                            'en-GB' => 'Odoo Product Error',
                             Defaults::LANGUAGE_SYSTEM => 'Odoo Product Error'
                         ],
                         'customFieldType' => 'text',
@@ -83,8 +96,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::DATETIME,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Last Update Time',
                             'de-DE' => 'Letzte Aktualisierungszeit',
+                            'en-GB' => 'Last Update Time',
                             Defaults::LANGUAGE_SYSTEM => 'Last Update Time'
                         ],
                         'customFieldType' => 'date',
@@ -114,8 +127,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::INT,
                     'config' => [
                         'label' => [
+                            'de-DE' => 'Odoo Kategorie Id', 
                             'en-GB' => 'Odoo Category Id',
-                            'de-DE' => 'Odoo Kategorie Id',
                             Defaults::LANGUAGE_SYSTEM => 'Odoo Category Id'
                         ],
                         'customFieldType' => 'int',
@@ -127,8 +140,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::TEXT,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Odoo Category Error',
                             'de-DE' => 'Odoo-Kategoriefeler',
+                            'en-GB' => 'Odoo Category Error',
                             Defaults::LANGUAGE_SYSTEM => 'Odoo Category Error'
                         ],
                         'customFieldType' => 'text',
@@ -140,8 +153,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::DATETIME,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Last Update Time',
                             'de-DE' => 'Letzte Aktualisierungszeit',
+                            'en-GB' => 'Last Update Time',
                             Defaults::LANGUAGE_SYSTEM => 'Last Update Time'
                         ],
                         'customFieldType' => 'date',
@@ -171,8 +184,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::INT,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Odoo Manufacturer Id',
                             'de-DE' => 'Odoo Hersteller Id',
+                            'en-GB' => 'Odoo Manufacturer Id',
                             Defaults::LANGUAGE_SYSTEM => 'Odoo Manufacturer Id'
                         ],
                         'customFieldType' => 'int',
@@ -184,8 +197,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::TEXT,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Odoo Manufacturer Error',
                             'de-DE' => 'Odoo-Herstellungsfehler',
+                            'en-GB' => 'Odoo Manufacturer Error',
                             Defaults::LANGUAGE_SYSTEM => 'Odoo Manufacturer Error'
                         ],
                         'customFieldType' => 'text',
@@ -197,8 +210,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::DATETIME,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Last Update Time',
                             'de-DE' => 'Letzte Aktualisierungszeit',
+                            'en-GB' => 'Last Update Time',
                             Defaults::LANGUAGE_SYSTEM => 'Last Update Time'
                         ],
                         'customFieldType' => 'date',
@@ -228,8 +241,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::INT,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Odoo Customer Id',
                             'de-DE' => 'Odoo Kunden Id',
+                            'en-GB' => 'Odoo Customer Id',
                             Defaults::LANGUAGE_SYSTEM => 'Odoo Customer Id'
                         ],
                         'customFieldType' => 'int',
@@ -242,8 +255,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::TEXT,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Odoo Customer Error',
                             'de-DE' => 'Odoo Kundenfehler',
+                            'en-GB' => 'Odoo Customer Error',
                             Defaults::LANGUAGE_SYSTEM => 'Odoo Customer Error'
                         ],
                         'customFieldType' => 'text',
@@ -256,8 +269,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::DATETIME,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Last Update Time',
                             'de-DE' => 'Letzte Aktualisierungszeit',
+                            'en-GB' => 'Last Update Time',
                             Defaults::LANGUAGE_SYSTEM => 'Last Update Time'
                         ],
                         'customFieldType' => 'date',
@@ -287,8 +300,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::INT,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Odoo Order Id',
                             'de-DE' => 'Odoo Bestell-ID',
+                            'en-GB' => 'Odoo Order Id',
                             Defaults::LANGUAGE_SYSTEM => 'Odoo Order Id'
                         ],
                         'customFieldType' => 'int',
@@ -301,8 +314,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::TEXT,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Odoo Order Error',
                             'de-DE' => 'Odoo Bestellfehler',
+                            'en-GB' => 'Odoo Order Error',
                             Defaults::LANGUAGE_SYSTEM => 'Odoo Order Error'
                         ],
                         'customFieldType' => 'text',
@@ -315,8 +328,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::DATETIME,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Last Update Time',
                             'de-DE' => 'Letzte Aktualisierungszeit',
+                            'en-GB' => 'Last Update Time',
                             Defaults::LANGUAGE_SYSTEM => 'Last Update Time'
                         ],
                         'customFieldType' => 'date',
@@ -346,8 +359,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::INT,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Odoo Customer Group Id',
                             'de-DE' => 'Odoo Kunden Gruppen Id',
+                            'en-GB' => 'Odoo Customer Group Id',
                             Defaults::LANGUAGE_SYSTEM => 'Odoo Customer Group Id'
                         ],
                         'customFieldType' => 'int',
@@ -359,8 +372,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::TEXT,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Odoo Customer Group Error',
                             'de-DE' => 'Odoo Kunden Gruppen Fehler',
+                            'en-GB' => 'Odoo Customer Group Error',
                             Defaults::LANGUAGE_SYSTEM => 'Odoo Customer Group Error'
                         ],
                         'customFieldType' => 'text',
@@ -372,8 +385,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::DATETIME,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Last Update Time',
                             'de-DE' => 'Letzte Aktualisierungszeit',
+                            'en-GB' => 'Last Update Time',
                             Defaults::LANGUAGE_SYSTEM => 'Last Update Time'
                         ],
                         'customFieldType' => 'date',
@@ -403,8 +416,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::INT,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Odoo Shipping Method Id',
                             'de-DE' => 'Odoo Versandmethoden Id',
+                            'en-GB' => 'Odoo Shipping Method Id',
                             Defaults::LANGUAGE_SYSTEM => 'Odoo Shipping Method Id'
                         ],
                         'customFieldType' => 'int',
@@ -416,8 +429,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::TEXT,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Odoo Shipping Method Error',
                             'de-DE' => 'Odoo Versandmethoden Fehler',
+                            'en-GB' => 'Odoo Shipping Method Error',
                             Defaults::LANGUAGE_SYSTEM => 'Odoo Shipping Method Error'
                         ],
                         'customFieldType' => 'text',
@@ -429,8 +442,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::DATETIME,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Last Update Time',
                             'de-DE' => 'Letzte Aktualisierungszeit',
+                            'en-GB' => 'Last Update Time',
                             Defaults::LANGUAGE_SYSTEM => 'Last Update Time'
                         ],
                         'customFieldType' => 'date',
@@ -460,8 +473,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::INT,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Odoo Currency Id',
                             'de-DE' => 'Odoo Währung Id',
+                            'en-GB' => 'Odoo Currency Id',
                             Defaults::LANGUAGE_SYSTEM => 'Odoo Currency Id'
                         ],
                         'customFieldType' => 'int',
@@ -473,8 +486,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::TEXT,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Odoo Currency Error',
                             'de-DE' => 'Odoo Währung Fehler',
+                            'en-GB' => 'Odoo Currency Error',
                             Defaults::LANGUAGE_SYSTEM => 'Odoo Currency Error'
                         ],
                         'customFieldType' => 'text',
@@ -486,8 +499,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::DATETIME,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Last Update Time',
                             'de-DE' => 'Letzte Aktualisierungszeit',
+                            'en-GB' => 'Last Update Time',
                             Defaults::LANGUAGE_SYSTEM => 'Last Update Time'
                         ],
                         'customFieldType' => 'date',
@@ -517,8 +530,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::INT,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Odoo Tax Id',
                             'de-DE' => 'Odoo Steuer n Id',
+                            'en-GB' => 'Odoo Tax Id',
                             Defaults::LANGUAGE_SYSTEM => 'Odoo Tax Id'
                         ],
                         'customFieldType' => 'int',
@@ -530,8 +543,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::TEXT,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Odoo Tax Error',
                             'de-DE' => 'Odoo Steuer n Fehler',
+                            'en-GB' => 'Odoo Tax Error',
                             Defaults::LANGUAGE_SYSTEM => 'Odoo Tax Error'
                         ],
                         'customFieldType' => 'text',
@@ -543,8 +556,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::DATETIME,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Last Update Time',
                             'de-DE' => 'Letzte Aktualisierungszeit',
+                            'en-GB' => 'Last Update Time',
                             Defaults::LANGUAGE_SYSTEM => 'Last Update Time'
                         ],
                         'customFieldType' => 'date',
@@ -574,8 +587,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::INT,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Odoo Language Id',
                             'de-DE' => 'Odoo Sprache Id',
+                            'en-GB' => 'Odoo Language Id',
                             Defaults::LANGUAGE_SYSTEM => 'Odoo Language Id'
                         ],
                         'customFieldType' => 'int',
@@ -587,8 +600,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::TEXT,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Odoo Language Error',
                             'de-DE' => 'Odoo Sprachfehler',
+                            'en-GB' => 'Odoo Language Error',
                             Defaults::LANGUAGE_SYSTEM => 'Odoo Language Error'
                         ],
                         'customFieldType' => 'text',
@@ -600,8 +613,8 @@ class CustomFieldsInstaller
                     'type' => CustomFieldTypes::DATETIME,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Last Update Time',
                             'de-DE' => 'Letzte Aktualisierungszeit',
+                            'en-GB' => 'Last Update Time',
                             Defaults::LANGUAGE_SYSTEM => 'Last Update Time'
                         ],
                         'customFieldType' => 'date',
@@ -730,49 +743,49 @@ class CustomFieldsInstaller
             ],
         ],
         [
-            'name' => self::ODOO_SHOPWARE_LANGUAGE,
+            'name' => self::ODOO_SHOPWARE_COUNTRY,
             'position' => 1,
             'config' => [
                 'label' => [
-                    'de-DE' => 'Odoo Sprache',
-                    'en-GB' => 'Odoo Language'
+                    'de-DE' => 'Odoo Land',
+                    'en-GB' => 'Odoo Country'
                 ],
                 'translated' => true,
             ],
             'customFields' => [
                 [
-                    'name' => self::ODOO_SHOPWARE_LANGUAGE . self::ID,
+                    'name' => self::ODOO_SHOPWARE_COUNTRY . self::ID,
                     'type' => CustomFieldTypes::INT,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Odoo Language Id',
-                            'de-DE' => 'Odoo Sprache Id',
-                            Defaults::LANGUAGE_SYSTEM => 'Odoo Language Id'
+                            'de-DE' => 'Odoo Land Id',
+                            'en-GB' => 'Odoo Country Id',
+                            Defaults::LANGUAGE_SYSTEM => 'Odoo Country Id'
                         ],
                         'customFieldType' => 'int',
                         'customFieldPosition' => 1
                     ]
                 ],
                 [
-                    'name' => self::ODOO_SHOPWARE_LANGUAGE . self::ERROR,
+                    'name' => self::ODOO_SHOPWARE_COUNTRY . self::ERROR,
                     'type' => CustomFieldTypes::TEXT,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Odoo Language Error',
-                            'de-DE' => 'Odoo Sprachfehler',
-                            Defaults::LANGUAGE_SYSTEM => 'Odoo Language Error'
+                            'de-DE' => 'Odoo Länderfehler',
+                            'en-GB' => 'Odoo Country Error',
+                            Defaults::LANGUAGE_SYSTEM => 'Odoo Country Error'
                         ],
                         'customFieldType' => 'text',
                         'customFieldPosition' => 2
                     ]
                 ],
                 [
-                    'name' => self::ODOO_SHOPWARE_LANGUAGE . self::UPDATEAT,
+                    'name' => self::ODOO_SHOPWARE_COUNTRY . self::UPDATEAT,
                     'type' => CustomFieldTypes::DATETIME,
                     'config' => [
                         'label' => [
-                            'en-GB' => 'Last Update Time',
-                            'de-DE' => 'Letzte Aktualisierungszeit',
+                             'de-DE' => 'Letzte Aktualisierungszeit',
+                             'en-GB' => 'Last Update Time',
                             Defaults::LANGUAGE_SYSTEM => 'Last Update Time'
                         ],
                         'customFieldType' => 'date',
@@ -782,7 +795,235 @@ class CustomFieldsInstaller
             ],
             'relations' => [
                 [
-                    'entityName' => 'language',
+                    'entityName' => 'country',
+                ],
+            ],
+        ],
+        [
+            'name' => self::ODOO_SHOPWARE_COUNTRY_STATE,
+            'position' => 1,
+            'config' => [
+                'label' => [
+                    'de-DE' => 'Odoo Land Staat',
+                    'en-GB' => 'Odoo Country State'
+                ],
+                'translated' => true,
+            ],
+            'customFields' => [
+                [
+                    'name' => self::ODOO_SHOPWARE_COUNTRY_STATE . self::ID,
+                    'type' => CustomFieldTypes::INT,
+                    'config' => [
+                        'label' => [
+                            'de-DE' => 'Odoo Land Staat Id',
+                            'en-GB' => 'Odoo Country State Id',
+                            Defaults::LANGUAGE_SYSTEM => 'Odoo Country State Id'
+                        ],
+                        'customFieldType' => 'int',
+                        'customFieldPosition' => 1
+                    ]
+                ],
+                [
+                    'name' => self::ODOO_SHOPWARE_COUNTRY_STATE . self::ERROR,
+                    'type' => CustomFieldTypes::TEXT,
+                    'config' => [
+                        'label' => [
+                            'de-DE' => 'Odoo Country State Fehler',
+                            'en-GB' => 'Odoo Country State Error',
+                            Defaults::LANGUAGE_SYSTEM => 'Odoo Country State Error'
+                        ],
+                        'customFieldType' => 'text',
+                        'customFieldPosition' => 2
+                    ]
+                ],
+                [
+                    'name' => self::ODOO_SHOPWARE_COUNTRY_STATE . self::UPDATEAT,
+                    'type' => CustomFieldTypes::DATETIME,
+                    'config' => [
+                        'label' => [
+                             'de-DE' => 'Letzte Aktualisierungszeit',
+                             'en-GB' => 'Last Update Time',
+                            Defaults::LANGUAGE_SYSTEM => 'Last Update Time'
+                        ],
+                        'customFieldType' => 'date',
+                        'customFieldPosition' => 3
+                    ]
+                ],
+            ],
+            'relations' => [
+                [
+                    'entityName' => 'country_state',
+                ],
+            ],
+        ],
+        [
+            'name' => self::ODOO_SHOPWARE_TAG,
+            'position' => 1,
+            'config' => [
+                'label' => [
+                    'de-DE' => 'Odoo Tag Staat',
+                    'en-GB' => 'Odoo Tag'
+                ],
+                'translated' => true,
+            ],
+            'customFields' => [
+                [
+                    'name' => self::ODOO_SHOPWARE_TAG . self::ID,
+                    'type' => CustomFieldTypes::INT,
+                    'config' => [
+                        'label' => [
+                            'de-DE' => 'Odoo Tag Staat Id',
+                            'en-GB' => 'Odoo Tag Id',
+                            Defaults::LANGUAGE_SYSTEM => 'Odoo Tag Id'
+                        ],
+                        'customFieldType' => 'int',
+                        'customFieldPosition' => 1
+                    ]
+                ],
+                [
+                    'name' => self::ODOO_SHOPWARE_TAG . self::ERROR,
+                    'type' => CustomFieldTypes::TEXT,
+                    'config' => [
+                        'label' => [
+                            'de-DE' => 'Odoo Tag Fehler',
+                            'en-GB' => 'Odoo Tag Error',
+                            Defaults::LANGUAGE_SYSTEM => 'Odoo Tag Error'
+                        ],
+                        'customFieldType' => 'text',
+                        'customFieldPosition' => 2
+                    ]
+                ],
+                [
+                    'name' => self::ODOO_SHOPWARE_TAG . self::UPDATEAT,
+                    'type' => CustomFieldTypes::DATETIME,
+                    'config' => [
+                        'label' => [
+                             'de-DE' => 'Letzte Aktualisierungszeit',
+                             'en-GB' => 'Last Update Time',
+                            Defaults::LANGUAGE_SYSTEM => 'Last Update Time'
+                        ],
+                        'customFieldType' => 'date',
+                        'customFieldPosition' => 3
+                    ]
+                ],
+            ],
+            'relations' => [
+                [
+                    'entityName' => 'customer',
+                ],
+            ],
+        ],
+        [
+            'name' => self::ODOO_SHOPWARE_SALUTATION,
+            'position' => 1,
+            'config' => [
+                'label' => [
+                    'de-DE' => 'Odoo Begrüßung',
+                    'en-GB' => 'Odoo Salutation'
+                ],
+                'translated' => true,
+            ],
+            'customFields' => [
+                [
+                    'name' => self::ODOO_SHOPWARE_SALUTATION . self::ID,
+                    'type' => CustomFieldTypes::INT,
+                    'config' => [
+                        'label' => [
+                            'de-DE' => 'Odoo Begrüßung Id',
+                            'en-GB' => 'Odoo Salutation Id',
+                            Defaults::LANGUAGE_SYSTEM => 'Odoo Salutation Id'
+                        ],
+                        'customFieldType' => 'int',
+                        'customFieldPosition' => 1
+                    ]
+                ],
+                [
+                    'name' => self::ODOO_SHOPWARE_SALUTATION . self::ERROR,
+                    'type' => CustomFieldTypes::TEXT,
+                    'config' => [
+                        'label' => [
+                            'de-DE' => 'Odoo Begrüßung Fehler',
+                            'en-GB' => 'Odoo Salutation Error',
+                            Defaults::LANGUAGE_SYSTEM => 'Odoo Salutation Error'
+                        ],
+                        'customFieldType' => 'text',
+                        'customFieldPosition' => 2
+                    ]
+                ],
+                [
+                    'name' => self::ODOO_SHOPWARE_SALUTATION . self::UPDATEAT,
+                    'type' => CustomFieldTypes::DATETIME,
+                    'config' => [
+                        'label' => [
+                             'de-DE' => 'Letzte Aktualisierungszeit',
+                             'en-GB' => 'Last Update Time',
+                            Defaults::LANGUAGE_SYSTEM => 'Last Update Time'
+                        ],
+                        'customFieldType' => 'date',
+                        'customFieldPosition' => 3
+                    ]
+                ],
+            ],
+            'relations' => [
+                [
+                    'entityName' => 'salutation',
+                ],
+            ],
+        ],
+        [
+            'name' => self::ODOO_SHOPWARE_PAYMENT_METHOD,
+            'position' => 1,
+            'config' => [
+                'label' => [
+                    'de-DE' => 'Odoo Zahlungsmethode',
+                    'en-GB' => 'Odoo Payment Method'
+                ],
+                'translated' => true,
+            ],
+            'customFields' => [
+                [
+                    'name' => self::ODOO_SHOPWARE_PAYMENT_METHOD . self::ID,
+                    'type' => CustomFieldTypes::INT,
+                    'config' => [
+                        'label' => [
+                            'de-DE' => 'Odoo Zahlungsmethode Id',
+                            'en-GB' => 'Odoo Payment Method Id',
+                            Defaults::LANGUAGE_SYSTEM => 'Odoo Payment Method Id'
+                        ],
+                        'customFieldType' => 'int',
+                        'customFieldPosition' => 1
+                    ]
+                ],
+                [
+                    'name' => self::ODOO_SHOPWARE_PAYMENT_METHOD . self::ERROR,
+                    'type' => CustomFieldTypes::TEXT,
+                    'config' => [
+                        'label' => [
+                            'de-DE' => 'Odoo Zahlungsmethode Error',
+                            'en-GB' => 'Odoo Payment Method Fehler',
+                            Defaults::LANGUAGE_SYSTEM => 'Odoo Payment Method Error'
+                        ],
+                        'customFieldType' => 'text',
+                        'customFieldPosition' => 2
+                    ]
+                ],
+                [
+                    'name' => self::ODOO_SHOPWARE_PAYMENT_METHOD . self::UPDATEAT,
+                    'type' => CustomFieldTypes::DATETIME,
+                    'config' => [
+                        'label' => [
+                            'de-DE' => 'Letzte Aktualisierungszeit',
+                            'en-GB' => 'Last Update Time',
+                            Defaults::LANGUAGE_SYSTEM => 'Last Update Time'
+                        ],
+                        'customFieldType' => 'date',
+                        'customFieldPosition' => 3
+                    ]
+                ],
+            ],
+            'relations' => [
+                [
+                    'entityName' => 'payment_method',
                 ],
             ],
         ],
@@ -790,8 +1031,7 @@ class CustomFieldsInstaller
 
     public function __construct(
         private readonly EntityRepository $customFieldSetRepository,
-    )
-    {
+    ) {
     }
 
     public function install(Context $context): void
@@ -800,7 +1040,7 @@ class CustomFieldsInstaller
         for ($i = 0; $i < $customFieldCount; $i++) {
             $name = self::CUSTOM_FIELDSET_NAME[$i];
             $getReferralCustomFieldSet = $this->getCustomFieldSetIds($name, $context);
-            if (!$getReferralCustomFieldSet) {
+            if (! $getReferralCustomFieldSet) {
                 $this->customFieldSetRepository->upsert([
                     self::CUSTOM_FIELDSET[$i]
                 ], $context);
