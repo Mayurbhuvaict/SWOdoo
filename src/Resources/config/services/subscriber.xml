@@ -7,6 +7,41 @@
     <services>
         <!-- Subscriber -->
 
+        <service id="ICTECHOdooShopwareConnector\Subscriber\Admin\CountrySubscriber" public="true">
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig"/>
+            <argument type="service" id="country.repository"/>
+            <argument type="service" id="Psr\Log\LoggerInterface" />
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Subscriber\Admin\PaymentMethodSubscriber" public="true">
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig"/>
+            <argument type="service" id="payment_method.repository"/>
+            <argument type="service" id="Psr\Log\LoggerInterface" />
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Subscriber\Admin\CountryStateSubscriber" public="true">
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig"/>
+            <argument type="service" id="country_state.repository"/>
+            <argument type="service" id="Psr\Log\LoggerInterface" />
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Subscriber\Admin\SalutationSubscriber" public="true">
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig"/>
+            <argument type="service" id="salutation.repository"/>
+            <argument type="service" id="Psr\Log\LoggerInterface" />
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <service id="ICTECHOdooShopwareConnector\Subscriber\Admin\TagSubscriber" public="true">
+            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig"/>
+            <argument type="service" id="tag.repository"/>
+            <argument type="service" id="Psr\Log\LoggerInterface" />
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
         <service id="ICTECHOdooShopwareConnector\Subscriber\Admin\CategorySubscriber" public="true">
             <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig"/>
             <argument type="service" id="category.repository"/>
@@ -21,9 +56,9 @@
             <tag name="kernel.event_subscriber"/>
         </service>
 
-        <service id="ICTECHOdooShopwareConnector\Subscriber\Admin\CustomerGroupSubscriber" public="true">
+        <service id="ICTECHOdooShopwareConnector\Subscriber\CustomerSubscriber" public="true">
             <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig"/>
-            <argument type="service" id="customer_group.repository"/>
+            <argument type="service" id="customer.repository"/>
             <argument type="service" id="Psr\Log\LoggerInterface" />
             <tag name="kernel.event_subscriber"/>
         </service>

@@ -10,18 +10,17 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopware\Core\System\Tax\TaxEvents;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-class TaxSubscriber implements EventSubscriberInterface
+class TagSubscriber implements EventSubscriberInterface
 {
-    private const MODULE = '/modify/shopware.tax';
-    private const DELETEMODULE = '/delete/shopware.tax';
-    private static $isProcessingTaxEvent = false;
+    private const MODULE = '/modify/shopware.tags';
+    private const DELETEMODULE = '/delete/shopware.tags';
+    private static $isProcessingTagEvent = false;
 
     public function __construct(
         private readonly PluginConfig $pluginConfig,
-        private readonly EntityRepository $taxRepository,
+        private readonly EntityRepository $tagRepository,
     ) {
         $this->client = new Client();
     }
@@ -29,78 +28,86 @@ class TaxSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            TaxEvents::TAX_WRITTEN_EVENT => 'onTaxWritten',
-            TaxEvents::TAX_DELETED_EVENT => 'onTaxDelete',
+            'tag.written' => 'onTagWritten',
+            'tag.deleted' => 'onTagDelete',
         ];
     }
 
-    public function onTaxWritten(EntityWrittenEvent $event): void
+    public function onTagWritten(EntityWrittenEvent $event): void
     {
         $context = $event->getContext();
         $odooUrlData = $this->pluginConfig->fetchPluginConfigUrlData($context);
         $odooUrl = $odooUrlData . self::MODULE;
         $odooToken = $this->pluginConfig->getOdooAccessToken();
         $userId = $event->getContext()->getSource()->getUserId();
-        if ($odooUrl !== "null" && $odooToken) {
-            if (self::$isProcessingTaxEvent) {
+        if ($odooUrl !== 'null' && $odooToken) {
+            if (self::$isProcessingTagEvent) {
                 return;
             }
-            self::$isProcessingTaxEvent = true;
+            self::$isProcessingTagEvent = true;
             try {
                 foreach ($event->getWriteResults() as $writeResult) {
-                    $taxId = $writeResult->getPrimaryKey();
-                    if ($taxId) {
-                        $taxDataArray = $this->findTaxData($taxId, $event);
-                        if ($taxDataArray) {
-                            $taxDataArray->setExtensions([
+                    $tagId = $writeResult->getPrimaryKey();
+                    if ($tagId) {
+                        $tagDataArray = $this->findTagData($tagId, $event);
+                        if ($tagDataArray) {
+                            $tagDataArray->setExtensions([
                                 'subscriber' => $userId !== null,
                                 'userId' => $userId,
                             ]);
-                            $apiResponseData = $this->checkApiAuthentication($odooUrl, $odooToken, $taxDataArray);
+//                            dd($tagDataArray);
+                            $apiResponseData = $this->checkApiAuthentication($odooUrl, $odooToken, $tagDataArray);
                             if ($apiResponseData && array_key_exists('result', $apiResponseData) && $apiResponseData['result']) {
                                 $apiData = $apiResponseData['result'];
-                                $taxToUpsert = [];
+                                $tagToUpsert = [];
                                 if ($apiData['success'] && isset($apiData['data']) && is_array($apiData['data'])) {
                                     foreach ($apiData['data'] as $apiItem) {
-                                        $taxData = $this->buildTaxMethodData($apiItem);
-                                        if ($taxData) {
-                                            $taxToUpsert[] = $taxData;
+                                        $tagData = $this->buildTagMethodData($apiItem);
+                                        if ($tagData) {
+                                            $tagToUpsert[] = $tagData;
                                         }
                                     }
                                 } else {
                                     foreach ($apiData['data'] ?? [] as $apiItem) {
-                                        $taxData = $this->buildTaxErrorData($apiItem);
-                                        if ($taxData) {
-                                            $taxToUpsert[] = $taxData;
+                                        $tagData = $this->buildTagErrorData($apiItem);
+                                        if ($tagData) {
+                                            $tagToUpsert[] = $tagData;
                                         }
                                     }
                                 }
-                                if (!empty($taxToUpsert)) {
-                                    $this->taxRepository->upsert($taxToUpsert, $context);
+                                if (! $tagToUpsert) {
+                                    // if (! empty($tagToUpsert)) {
+                                    $this->tagRepository->upsert($tagToUpsert, $context);
                                 }
                             }
                         }
                     }
                 }
             } finally {
-                self::$isProcessingTaxEvent = false;
+                self::$isProcessingTagEvent = false;
             }
         }
     }
 
-    public function findTaxData($taxId, $event): ?Entity
+    public function findTagData($tagId, $event): ?Entity
     {
         $criteria = new Criteria();
         $criteria->addAssociation('translations');
+        $criteria->addAssociation('languages');
         $criteria->addAssociation('products');
-        $criteria->addAssociation('rules');
-        $criteria->addAssociation('rules.country');
+        $criteria->addAssociation('media');
+        $criteria->addAssociation('categories');
+        $criteria->addAssociation('customers');
+        $criteria->addAssociation('orders');
         $criteria->addAssociation('shippingMethods');
-        $criteria->addFilter(new EqualsFilter('id', $taxId));
-        return $this->taxRepository->search($criteria, $event->getContext())->first();
+        $criteria->addAssociation('newsletterRecipients');
+        $criteria->addAssociation('landingPages');
+        $criteria->addAssociation('rules');
+        $criteria->addFilter(new EqualsFilter('id', $tagId));
+        return $this->tagRepository->search($criteria, $event->getContext())->first();
     }
 
-    public function checkApiAuthentication($apiUrl, $odooToken, $taxDataArray): ?array
+    public function checkApiAuthentication($apiUrl, $odooToken, $tagDataArray): ?array
     {
         try {
             $apiResponseData = $this->client->post(
@@ -110,7 +117,7 @@ class TaxSubscriber implements EventSubscriberInterface
                         'Content-Type' => 'application/json',
                         'Access-Token' => $odooToken,
                     ],
-                    'json' => $taxDataArray,
+                    'json' => $tagDataArray,
                 ]
             );
             return json_decode($apiResponseData->getBody()->getContents(), true);
@@ -122,66 +129,67 @@ class TaxSubscriber implements EventSubscriberInterface
         }
     }
 
-    private function buildTaxMethodData($apiItem): ?array
+    public function buildTagMethodData($apiItem): ?array
     {
-        if (isset($apiItem['id'], $apiItem['odoo_tax_id'])) {
+        if (isset($apiItem['id'], $apiItem['odoo_tag_id'])) {
             return [
-                "id" => $apiItem['id'],
+                'id' => $apiItem['id'],
                 'customFields' => [
-                    'odoo_tax_id' => $apiItem['odoo_tax_id'],
-                    'odoo_tax_error' => null,
-                    'odoo_tax_update_time' => date("Y-m-d H:i"),
+                    'odoo_tag_id' => $apiItem['odoo_tag_id'],
+                    'odoo_tag_error' => null,
+                    'odoo_tag_update_time' => date('Y-m-d H:i'),
                 ],
             ];
         }
         return null;
     }
 
-    private function buildTaxErrorData($apiItem): ?array
+    public function buildTagErrorData($apiItem): ?array
     {
         if (isset($apiItem['id'], $apiItem['odoo_shopware_error'])) {
             return [
-                "id" => $apiItem['id'],
+                'id' => $apiItem['id'],
                 'customFields' => [
-                    'odoo_tax_error' => $apiItem['odoo_shopware_error'],
+                    'odoo_tag_error' => $apiItem['odoo_shopware_error'],
                 ],
             ];
         }
         return null;
     }
 
-    public function onTaxDelete(EntityWrittenEvent $event): void
+    public function onTagDelete(EntityWrittenEvent $event): void
     {
         $context = $event->getContext();
         $odooUrlData = $this->pluginConfig->fetchPluginConfigUrlData($context);
         $odooUrl = $odooUrlData . self::DELETEMODULE;
         $odooToken = $this->pluginConfig->getOdooAccessToken();
         $userId = $event->getContext()->getSource()->getUserId();
-        if ($odooUrl !== "null" && $odooToken) {
-            if (self::$isProcessingTaxEvent) {
+        if ($odooUrl !== 'null' && $odooToken) {
+            if (self::$isProcessingTagEvent) {
                 return;
             }
-            self::$isProcessingTaxEvent = true;
+            self::$isProcessingTagEvent = true;
             try {
                 foreach ($event->getWriteResults() as $writeResult) {
-                    $taxId = $writeResult->getPrimaryKey();
-                    if ($taxId) {
-                        $deleteTaxData = [
-                            'shopwareId' => $taxId,
+                    $tagId = $writeResult->getPrimaryKey();
+                    if ($tagId) {
+                        $deleteTagData = [
+                            'shopwareId' => $tagId,
                             'operation' => $writeResult->getOperation(),
-                            "extensions" => [
+                            'extensions' => [
                                 'subscriber' => $userId !== null,
                                 'userId' => $userId,
                             ]
                         ];
-                        $apiResponseData = $this->checkApiAuthentication($odooUrl, $odooToken, $deleteTaxData);
+//                        dd($deleteTagData);
+                        $apiResponseData = $this->checkApiAuthentication($odooUrl, $odooToken, $deleteTagData);
                         if ($apiResponseData && array_key_exists('result', $apiResponseData) && $apiResponseData['result']) {
                             $apiData = $apiResponseData['result'];
-                            if (!$apiData['success'] && isset($apiData['data']) && is_array($apiData['data'])) {
+                            if (! $apiData['success'] && isset($apiData['data']) && is_array($apiData['data'])) {
                                 foreach ($apiData['data'] as $apiItem) {
-                                    $taxData = $this->buildTaxErrorData($apiItem);
-                                    if ($taxData) {
-                                        $this->taxRepository->upsert([$taxData], $context);
+                                    $tagData = $this->buildTagErrorData($apiItem);
+                                    if ($tagData) {
+                                        $this->tagRepository->upsert([$tagData], $context);
                                     }
                                 }
                             }
@@ -189,7 +197,7 @@ class TaxSubscriber implements EventSubscriberInterface
                     }
                 }
             } finally {
-                self::$isProcessingTaxEvent = false;
+                self::$isProcessingTagEvent = false;
             }
         }
     }

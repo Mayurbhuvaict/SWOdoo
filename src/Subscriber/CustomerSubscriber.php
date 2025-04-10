@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace ICTECHOdooShopwareConnector\Subscriber;
 
@@ -13,6 +15,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use GuzzleHttp\Exception\RequestException;
 use Shopware\Core\Checkout\Customer\CustomerEvents;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
+use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityDeletedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class CustomerSubscriber implements EventSubscriberInterface
@@ -20,7 +23,7 @@ class CustomerSubscriber implements EventSubscriberInterface
     private const MODULE = '/modify/shopware.customer';
     private const DELETEMODULE = '/delete/shopware.customer';
     private static $isProcessingCustomerEvent = false;
-   
+
     public function __construct(
         private readonly PluginConfig $pluginConfig,
         private readonly EntityRepository $customerRepository,
@@ -33,16 +36,14 @@ class CustomerSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            // CustomerRegisterEvent::class => 'onRegister',
             CustomerEvents::CUSTOMER_WRITTEN_EVENT => 'onWrittenCustomerEvent',
-            CustomerEvents::CUSTOMER_ADDRESS_WRITTEN_EVENT => 'onWrittenCustomerAddressEvent',
+            CustomerEvents::CUSTOMER_DELETED_EVENT => 'onCustomerDeleteEvent',
         ];
     }
 
 
     public function onWrittenCustomerEvent(EntityWrittenEvent $event): void
     {
-        // dd($event->getWriteResults());
         $context = $event->getContext();
         $odooUrlData = $this->pluginConfig->fetchPluginConfigUrlData($context);
         $odooUrl = $odooUrlData . self::MODULE;
@@ -62,7 +63,6 @@ class CustomerSubscriber implements EventSubscriberInterface
                         $customerData = $this->findCustomerData($customerId, $context);
                         $customerToUpsert = [];
                         if ($customerData) {
-                            $states = $event->getContext()->getStates();
                             $states = $event->getContext()->getStates();
                             $extensions = [
                                 'subscriber' => true,
@@ -112,11 +112,9 @@ class CustomerSubscriber implements EventSubscriberInterface
                         }
                     }
                 }
-            }
-            catch (RequestException $e) {
+            } catch (RequestException $e) {
                 $this->logger->error('Error while sending customer data to Odoo: ' . $e->getMessage());
-            }
-            finally {
+            } finally {
                 self::$isProcessingCustomerEvent = false;
             }
         }
@@ -135,7 +133,7 @@ class CustomerSubscriber implements EventSubscriberInterface
         $criteria->addAssociation('activeBillingAddress');
         $criteria->addAssociation('defaultShippingAddress');
         $criteria->addAssociation('activeShippingAddress');
-        $criteria->addAssociation('salutation');
+        $criteria->addAssociation('customer');
         $criteria->addAssociation('addresses');
         $criteria->addAssociation('orderCustomers');
         $criteria->addAssociation('tags');
@@ -149,10 +147,9 @@ class CustomerSubscriber implements EventSubscriberInterface
         $criteria->addAssociation('accountType');
         $criteria->addAssociation('boundSalesChannel');
         $criteria->addAssociation('wishlists');
-        $criteria->addFilter(new EqualsFilter('id',$customerId));
+        $criteria->addFilter(new EqualsFilter('id', $customerId));
         return $this->customerRepository->search($criteria, $context)->first();
     }
-
 
     public function checkApiAuthentication($apiUrl, $odooToken, $category): ?array
     {
@@ -184,35 +181,83 @@ class CustomerSubscriber implements EventSubscriberInterface
 
     public function buildCustomerData($apiItem): ?array
     {
-        if (isset($apiItem['id'], $apiItem['odoo_category_id'])) {
+        if (isset($apiItem['id'], $apiItem['odoo_customer_id'])) {
             return [
                 'id' => $apiItem['id'],
                 'customFields' => [
-                    'odoo_category_id' => $apiItem['odoo_category_id'],
-                    'odoo_category_error' => null,
-                    'odoo_category_update_time' => date('Y-m-d H:i'),
-                ],
-            ];
-        }
-        return null;
-    }
- 
-    public function buildCustomerErrorData($apiItem): ?array
-    {
-        if (isset($apiItem['id'], $apiItem['odoo_shopware_error'])) {
-            return [
-                'id' => $apiItem['id'],
-                'customFields' => [
-                    'odoo_category_error' => $apiItem['odoo_shopware_error'],
+                    'odoo_customer_id' => $apiItem['odoo_customer_id'],
+                    'odoo_customer_error' => null,
+                    'odoo_customer_update_time' => date('Y-m-d H:i'),
                 ],
             ];
         }
         return null;
     }
 
-    public function onWrittenCustomerAddressEvent(EntityWrittenEvent $event): void
+    public function buildCustomerErrorData($apiItem): ?array
     {
-        $updatedData = $event->getPayloads()[0];
-        $this->odooClient->updateCustomerAddress($updatedData, $event->getContext());
+        if (isset($apiItem['id'], $apiItem['odoo_shopware_error'])) {
+            return [
+                'id' => $apiItem['id'],
+                'customFields' => [
+                    'odoo_customer_error' => $apiItem['odoo_shopware_error'],
+                ],
+            ];
+        }
+        return null;
+    }
+
+    public function onCustomerDeleteEvent(EntityDeletedEvent $event): void
+    {
+        $context = $event->getContext();
+        $odooUrlData = $this->pluginConfig->fetchPluginConfigUrlData($context);
+        $odooUrl = $odooUrlData . self::DELETEMODULE;
+        $odooToken = $this->pluginConfig->getOdooAccessToken();
+        // dd($odooUrl, $odooToken);
+        if ($odooUrl !== 'null' && $odooToken) {
+            if (self::$isProcessingCustomerEvent) {
+                return;
+            }
+            self::$isProcessingCustomerEvent = true;
+            try {
+                foreach ($event->getWriteResults() as $writeResult) {
+                    $customerId = $writeResult->getPrimaryKey();
+                    if ($customerId) {
+                        $states = $event->getContext()->getStates();
+                        $extensions = [
+                            'subscriber' => true,
+                            'states' => false,
+                        ];
+
+                        if (empty($states)) {
+                            $extensions['userId'] = 'shopwareAdmin';
+                        } elseif (in_array('use-queue-indexing', $states, true)) {
+                            $extensions['userId'] = 'shopwareStorefront';
+                        } else {
+                            $extensions['userId'] = 'unknown';
+                        }
+                        $deleteCustomerData = [
+                            'shopwareId' => $customerId,
+                            'operation' => $writeResult->getOperation(),
+                            'extensions' => $extensions,
+                        ];
+                        $apiResponseData = $this->checkApiAuthentication($odooUrl, $odooToken, $deleteCustomerData);
+                        if ($apiResponseData && array_key_exists('result', $apiResponseData) && $apiResponseData['result']) {
+                            $apiData = $apiResponseData['result'];
+                            if (! $apiData['success'] && isset($apiData['data']) && is_array($apiData['data'])) {
+                                foreach ($apiData['data'] as $apiItem) {
+                                    $customerData = $this->buildCustomerErrorData($apiItem);
+                                    if ($customerData) {
+                                        $this->customerRepository->upsert([$customerData], $context);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } finally {
+                self::$isProcessingCustomerEvent = false;
+            }
+        }
     }
 }

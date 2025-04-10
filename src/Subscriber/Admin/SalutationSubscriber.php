@@ -1,27 +1,27 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace ICTECHOdooShopwareConnector\Subscriber\Admin;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use ICTECHOdooShopwareConnector\Components\Config\PluginConfig;
-use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopware\Core\System\Tax\TaxEvents;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 
-class TaxSubscriber implements EventSubscriberInterface
+
+class SalutationSubscriber implements EventSubscriberInterface
 {
-    private const MODULE = '/modify/shopware.tax';
-    private const DELETEMODULE = '/delete/shopware.tax';
-    private static $isProcessingTaxEvent = false;
+    private const MODULE = '/modify/shopware.salutation';
+    private const DELETEMODULE = '/delete/shopware.salutation';
+    private static $isProcessingSalutationEvent = false;
 
     public function __construct(
         private readonly PluginConfig $pluginConfig,
-        private readonly EntityRepository $taxRepository,
+        private readonly EntityRepository $salutationRepository,
     ) {
         $this->client = new Client();
     }
@@ -29,78 +29,81 @@ class TaxSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            TaxEvents::TAX_WRITTEN_EVENT => 'onTaxWritten',
-            TaxEvents::TAX_DELETED_EVENT => 'onTaxDelete',
+            'salutation.written' => 'onSalutationWritten',
+            'salutation.deleted' => 'onSalutationDelete',
         ];
     }
 
-    public function onTaxWritten(EntityWrittenEvent $event): void
+    public function onSalutationWritten(EntityWrittenEvent $event): void
     {
         $context = $event->getContext();
         $odooUrlData = $this->pluginConfig->fetchPluginConfigUrlData($context);
         $odooUrl = $odooUrlData . self::MODULE;
         $odooToken = $this->pluginConfig->getOdooAccessToken();
         $userId = $event->getContext()->getSource()->getUserId();
-        if ($odooUrl !== "null" && $odooToken) {
-            if (self::$isProcessingTaxEvent) {
+        if ($odooUrl !== 'null' && $odooToken) {
+            if (self::$isProcessingSalutationEvent) {
                 return;
             }
-            self::$isProcessingTaxEvent = true;
+            self::$isProcessingSalutationEvent = true;
             try {
                 foreach ($event->getWriteResults() as $writeResult) {
-                    $taxId = $writeResult->getPrimaryKey();
-                    if ($taxId) {
-                        $taxDataArray = $this->findTaxData($taxId, $event);
-                        if ($taxDataArray) {
-                            $taxDataArray->setExtensions([
+                    $salutationId = $writeResult->getPrimaryKey();
+                    if ($salutationId) {
+                        $salutationDataArray = $this->findSalutationData($salutationId, $event);
+                        if ($salutationDataArray) {
+                            $salutationDataArray->setExtensions([
                                 'subscriber' => $userId !== null,
                                 'userId' => $userId,
                             ]);
-                            $apiResponseData = $this->checkApiAuthentication($odooUrl, $odooToken, $taxDataArray);
+//                            dd($salutationDataArray);
+                            $apiResponseData = $this->checkApiAuthentication($odooUrl, $odooToken, $salutationDataArray);
                             if ($apiResponseData && array_key_exists('result', $apiResponseData) && $apiResponseData['result']) {
                                 $apiData = $apiResponseData['result'];
-                                $taxToUpsert = [];
+                                $salutationToUpsert = [];
                                 if ($apiData['success'] && isset($apiData['data']) && is_array($apiData['data'])) {
                                     foreach ($apiData['data'] as $apiItem) {
-                                        $taxData = $this->buildTaxMethodData($apiItem);
-                                        if ($taxData) {
-                                            $taxToUpsert[] = $taxData;
+                                        $salutationData = $this->buildSalutationMethodData($apiItem);
+                                        if ($salutationData) {
+                                            $salutationToUpsert[] = $salutationData;
                                         }
                                     }
                                 } else {
                                     foreach ($apiData['data'] ?? [] as $apiItem) {
-                                        $taxData = $this->buildTaxErrorData($apiItem);
-                                        if ($taxData) {
-                                            $taxToUpsert[] = $taxData;
+                                        $salutationData = $this->buildSalutationErrorData($apiItem);
+                                        if ($salutationData) {
+                                            $salutationToUpsert[] = $salutationData;
                                         }
                                     }
                                 }
-                                if (!empty($taxToUpsert)) {
-                                    $this->taxRepository->upsert($taxToUpsert, $context);
+                                if (! $salutationToUpsert) {
+                                    // if (! empty($salutationToUpsert)) {
+                                    $this->salutationRepository->upsert($salutationToUpsert, $context);
                                 }
                             }
                         }
                     }
                 }
             } finally {
-                self::$isProcessingTaxEvent = false;
+                self::$isProcessingSalutationEvent = false;
             }
         }
     }
 
-    public function findTaxData($taxId, $event): ?Entity
+    public function findSalutationData($salutationId, $event): ?Entity
     {
         $criteria = new Criteria();
         $criteria->addAssociation('translations');
-        $criteria->addAssociation('products');
-        $criteria->addAssociation('rules');
-        $criteria->addAssociation('rules.country');
-        $criteria->addAssociation('shippingMethods');
-        $criteria->addFilter(new EqualsFilter('id', $taxId));
-        return $this->taxRepository->search($criteria, $event->getContext())->first();
+        $criteria->addAssociation('orderCustomers');
+        $criteria->addAssociation('orderAddresses');
+        $criteria->addAssociation('customerAddresses');
+        $criteria->addAssociation('customers');
+        $criteria->addAssociation('newsletterRecipients');
+        $criteria->addFilter(new EqualsFilter('id', $salutationId));
+        return $this->salutationRepository->search($criteria, $event->getContext())->first();
     }
 
-    public function checkApiAuthentication($apiUrl, $odooToken, $taxDataArray): ?array
+    public function checkApiAuthentication($apiUrl, $odooToken, $salutationDataArray): ?array
     {
         try {
             $apiResponseData = $this->client->post(
@@ -110,7 +113,7 @@ class TaxSubscriber implements EventSubscriberInterface
                         'Content-Type' => 'application/json',
                         'Access-Token' => $odooToken,
                     ],
-                    'json' => $taxDataArray,
+                    'json' => $salutationDataArray,
                 ]
             );
             return json_decode($apiResponseData->getBody()->getContents(), true);
@@ -122,66 +125,67 @@ class TaxSubscriber implements EventSubscriberInterface
         }
     }
 
-    private function buildTaxMethodData($apiItem): ?array
+    public function buildSalutationMethodData($apiItem): ?array
     {
-        if (isset($apiItem['id'], $apiItem['odoo_tax_id'])) {
+        if (isset($apiItem['id'], $apiItem['odoo_salutation_id'])) {
             return [
-                "id" => $apiItem['id'],
+                'id' => $apiItem['id'],
                 'customFields' => [
-                    'odoo_tax_id' => $apiItem['odoo_tax_id'],
-                    'odoo_tax_error' => null,
-                    'odoo_tax_update_time' => date("Y-m-d H:i"),
+                    'odoo_salutation_id' => $apiItem['odoo_salutation_id'],
+                    'odoo_salutation_error' => null,
+                    'odoo_salutation_update_time' => date('Y-m-d H:i'),
                 ],
             ];
         }
         return null;
     }
 
-    private function buildTaxErrorData($apiItem): ?array
+    public function buildSalutationErrorData($apiItem): ?array
     {
         if (isset($apiItem['id'], $apiItem['odoo_shopware_error'])) {
             return [
-                "id" => $apiItem['id'],
+                'id' => $apiItem['id'],
                 'customFields' => [
-                    'odoo_tax_error' => $apiItem['odoo_shopware_error'],
+                    'odoo_salutation_error' => $apiItem['odoo_shopware_error'],
                 ],
             ];
         }
         return null;
     }
 
-    public function onTaxDelete(EntityWrittenEvent $event): void
+    public function onSalutationDelete(EntityWrittenEvent $event): void
     {
         $context = $event->getContext();
         $odooUrlData = $this->pluginConfig->fetchPluginConfigUrlData($context);
         $odooUrl = $odooUrlData . self::DELETEMODULE;
         $odooToken = $this->pluginConfig->getOdooAccessToken();
         $userId = $event->getContext()->getSource()->getUserId();
-        if ($odooUrl !== "null" && $odooToken) {
-            if (self::$isProcessingTaxEvent) {
+        if ($odooUrl !== 'null' && $odooToken) {
+            if (self::$isProcessingSalutationEvent) {
                 return;
             }
-            self::$isProcessingTaxEvent = true;
+            self::$isProcessingSalutationEvent = true;
             try {
                 foreach ($event->getWriteResults() as $writeResult) {
-                    $taxId = $writeResult->getPrimaryKey();
-                    if ($taxId) {
-                        $deleteTaxData = [
-                            'shopwareId' => $taxId,
+                    $salutationId = $writeResult->getPrimaryKey();
+                    if ($salutationId) {
+                        $deleteSalutationData = [
+                            'shopwareId' => $salutationId,
                             'operation' => $writeResult->getOperation(),
-                            "extensions" => [
+                            'extensions' => [
                                 'subscriber' => $userId !== null,
                                 'userId' => $userId,
                             ]
                         ];
-                        $apiResponseData = $this->checkApiAuthentication($odooUrl, $odooToken, $deleteTaxData);
+//                        dd($deleteSalutationData);
+                        $apiResponseData = $this->checkApiAuthentication($odooUrl, $odooToken, $deleteSalutationData);
                         if ($apiResponseData && array_key_exists('result', $apiResponseData) && $apiResponseData['result']) {
                             $apiData = $apiResponseData['result'];
-                            if (!$apiData['success'] && isset($apiData['data']) && is_array($apiData['data'])) {
+                            if (! $apiData['success'] && isset($apiData['data']) && is_array($apiData['data'])) {
                                 foreach ($apiData['data'] as $apiItem) {
-                                    $taxData = $this->buildTaxErrorData($apiItem);
-                                    if ($taxData) {
-                                        $this->taxRepository->upsert([$taxData], $context);
+                                    $salutationData = $this->buildSalutationErrorData($apiItem);
+                                    if ($salutationData) {
+                                        $this->salutationRepository->upsert([$salutationData], $context);
                                     }
                                 }
                             }
@@ -189,7 +193,7 @@ class TaxSubscriber implements EventSubscriberInterface
                     }
                 }
             } finally {
-                self::$isProcessingTaxEvent = false;
+                self::$isProcessingSalutationEvent = false;
             }
         }
     }

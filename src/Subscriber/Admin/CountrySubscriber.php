@@ -10,18 +10,18 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopware\Core\System\Tax\TaxEvents;
+use Shopware\Core\System\Country\CountryEvents;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-class TaxSubscriber implements EventSubscriberInterface
+class CountrySubscriber implements EventSubscriberInterface
 {
-    private const MODULE = '/modify/shopware.tax';
-    private const DELETEMODULE = '/delete/shopware.tax';
-    private static $isProcessingTaxEvent = false;
+    private const MODULE = '/modify/shopware.country';
+    private const DELETEMODULE = '/delete/shopware.country';
+    private static $isProcessingCountryEvent = false;
 
     public function __construct(
         private readonly PluginConfig $pluginConfig,
-        private readonly EntityRepository $taxRepository,
+        private readonly EntityRepository $countryRepository,
     ) {
         $this->client = new Client();
     }
@@ -29,78 +29,86 @@ class TaxSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            TaxEvents::TAX_WRITTEN_EVENT => 'onTaxWritten',
-            TaxEvents::TAX_DELETED_EVENT => 'onTaxDelete',
+            CountryEvents::COUNTRY_WRITTEN_EVENT => 'onCountryWritten',
+            CountryEvents::COUNTRY_DELETED_EVENT => 'onCountryDelete',
         ];
     }
 
-    public function onTaxWritten(EntityWrittenEvent $event): void
+    public function onCountryWritten(EntityWrittenEvent $event): void
     {
         $context = $event->getContext();
         $odooUrlData = $this->pluginConfig->fetchPluginConfigUrlData($context);
         $odooUrl = $odooUrlData . self::MODULE;
         $odooToken = $this->pluginConfig->getOdooAccessToken();
         $userId = $event->getContext()->getSource()->getUserId();
-        if ($odooUrl !== "null" && $odooToken) {
-            if (self::$isProcessingTaxEvent) {
+        if ($odooUrl !== 'null' && $odooToken) {
+            if (self::$isProcessingCountryEvent) {
                 return;
             }
-            self::$isProcessingTaxEvent = true;
+            self::$isProcessingCountryEvent = true;
             try {
                 foreach ($event->getWriteResults() as $writeResult) {
-                    $taxId = $writeResult->getPrimaryKey();
-                    if ($taxId) {
-                        $taxDataArray = $this->findTaxData($taxId, $event);
-                        if ($taxDataArray) {
-                            $taxDataArray->setExtensions([
+                    $countryId = $writeResult->getPrimaryKey();
+                    if ($countryId) {
+                        $countryDataArray = $this->findCountryData($countryId, $event);
+                        if ($countryDataArray) {
+                            $countryDataArray->setExtensions([
                                 'subscriber' => $userId !== null,
                                 'userId' => $userId,
                             ]);
-                            $apiResponseData = $this->checkApiAuthentication($odooUrl, $odooToken, $taxDataArray);
+//                            dd($countryDataArray);
+                            $apiResponseData = $this->checkApiAuthentication($odooUrl, $odooToken, $countryDataArray);
                             if ($apiResponseData && array_key_exists('result', $apiResponseData) && $apiResponseData['result']) {
                                 $apiData = $apiResponseData['result'];
-                                $taxToUpsert = [];
+                                $countryToUpsert = [];
                                 if ($apiData['success'] && isset($apiData['data']) && is_array($apiData['data'])) {
                                     foreach ($apiData['data'] as $apiItem) {
-                                        $taxData = $this->buildTaxMethodData($apiItem);
-                                        if ($taxData) {
-                                            $taxToUpsert[] = $taxData;
+                                        $countryData = $this->buildCountryMethodData($apiItem);
+                                        if ($countryData) {
+                                            $countryToUpsert[] = $countryData;
                                         }
                                     }
                                 } else {
                                     foreach ($apiData['data'] ?? [] as $apiItem) {
-                                        $taxData = $this->buildTaxErrorData($apiItem);
-                                        if ($taxData) {
-                                            $taxToUpsert[] = $taxData;
+                                        $countryData = $this->buildCountryErrorData($apiItem);
+                                        if ($countryData) {
+                                            $countryToUpsert[] = $countryData;
                                         }
                                     }
                                 }
-                                if (!empty($taxToUpsert)) {
-                                    $this->taxRepository->upsert($taxToUpsert, $context);
+                                if (! $countryToUpsert) {
+                                    // if (! empty($countryToUpsert)) {
+                                    $this->countryRepository->upsert($countryToUpsert, $context);
                                 }
                             }
                         }
                     }
                 }
             } finally {
-                self::$isProcessingTaxEvent = false;
+                self::$isProcessingCountryEvent = false;
             }
         }
     }
 
-    public function findTaxData($taxId, $event): ?Entity
+    public function findCountryData($countryId, $event): ?Entity
     {
         $criteria = new Criteria();
+        $criteria->addAssociation('states');
+        $criteria->addAssociation('states.country');
+        $criteria->addAssociation('states.translations');
         $criteria->addAssociation('translations');
-        $criteria->addAssociation('products');
-        $criteria->addAssociation('rules');
-        $criteria->addAssociation('rules.country');
-        $criteria->addAssociation('shippingMethods');
-        $criteria->addFilter(new EqualsFilter('id', $taxId));
-        return $this->taxRepository->search($criteria, $event->getContext())->first();
+        $criteria->addAssociation('countryStates');
+        $criteria->addAssociation('customerAddresses');
+        $criteria->addAssociation('orderAddresses');
+        $criteria->addAssociation('salesChannelDefaultAssignments');
+        $criteria->addAssociation('salesChannels');
+        $criteria->addAssociation('taxRules');
+        $criteria->addAssociation('currencyCountryRoundings');
+        $criteria->addFilter(new EqualsFilter('id', $countryId));
+        return $this->countryRepository->search($criteria, $event->getContext())->first();
     }
 
-    public function checkApiAuthentication($apiUrl, $odooToken, $taxDataArray): ?array
+    public function checkApiAuthentication($apiUrl, $odooToken, $countryDataArray): ?array
     {
         try {
             $apiResponseData = $this->client->post(
@@ -110,7 +118,7 @@ class TaxSubscriber implements EventSubscriberInterface
                         'Content-Type' => 'application/json',
                         'Access-Token' => $odooToken,
                     ],
-                    'json' => $taxDataArray,
+                    'json' => $countryDataArray,
                 ]
             );
             return json_decode($apiResponseData->getBody()->getContents(), true);
@@ -122,66 +130,66 @@ class TaxSubscriber implements EventSubscriberInterface
         }
     }
 
-    private function buildTaxMethodData($apiItem): ?array
+    public function buildCountryMethodData($apiItem): ?array
     {
-        if (isset($apiItem['id'], $apiItem['odoo_tax_id'])) {
+        if (isset($apiItem['id'], $apiItem['odoo_country_id'])) {
             return [
-                "id" => $apiItem['id'],
+                'id' => $apiItem['id'],
                 'customFields' => [
-                    'odoo_tax_id' => $apiItem['odoo_tax_id'],
-                    'odoo_tax_error' => null,
-                    'odoo_tax_update_time' => date("Y-m-d H:i"),
+                    'odoo_country_id' => $apiItem['odoo_country_id'],
+                    'odoo_country_error' => null,
+                    'odoo_country_update_time' => date('Y-m-d H:i'),
                 ],
             ];
         }
         return null;
     }
 
-    private function buildTaxErrorData($apiItem): ?array
+    public function buildCountryErrorData($apiItem): ?array
     {
         if (isset($apiItem['id'], $apiItem['odoo_shopware_error'])) {
             return [
-                "id" => $apiItem['id'],
+                'id' => $apiItem['id'],
                 'customFields' => [
-                    'odoo_tax_error' => $apiItem['odoo_shopware_error'],
+                    'odoo_country_error' => $apiItem['odoo_shopware_error'],
                 ],
             ];
         }
         return null;
     }
 
-    public function onTaxDelete(EntityWrittenEvent $event): void
+    public function onCountryDelete(EntityWrittenEvent $event): void
     {
         $context = $event->getContext();
         $odooUrlData = $this->pluginConfig->fetchPluginConfigUrlData($context);
         $odooUrl = $odooUrlData . self::DELETEMODULE;
         $odooToken = $this->pluginConfig->getOdooAccessToken();
         $userId = $event->getContext()->getSource()->getUserId();
-        if ($odooUrl !== "null" && $odooToken) {
-            if (self::$isProcessingTaxEvent) {
+        if ($odooUrl !== 'null' && $odooToken) {
+            if (self::$isProcessingCountryEvent) {
                 return;
             }
-            self::$isProcessingTaxEvent = true;
+            self::$isProcessingCountryEvent = true;
             try {
                 foreach ($event->getWriteResults() as $writeResult) {
-                    $taxId = $writeResult->getPrimaryKey();
-                    if ($taxId) {
-                        $deleteTaxData = [
-                            'shopwareId' => $taxId,
+                    $countryId = $writeResult->getPrimaryKey();
+                    if ($countryId) {
+                        $deleteCountryData = [
+                            'shopwareId' => $countryId,
                             'operation' => $writeResult->getOperation(),
-                            "extensions" => [
+                            'extensions' => [
                                 'subscriber' => $userId !== null,
                                 'userId' => $userId,
                             ]
                         ];
-                        $apiResponseData = $this->checkApiAuthentication($odooUrl, $odooToken, $deleteTaxData);
+                        $apiResponseData = $this->checkApiAuthentication($odooUrl, $odooToken, $deleteCountryData);
                         if ($apiResponseData && array_key_exists('result', $apiResponseData) && $apiResponseData['result']) {
                             $apiData = $apiResponseData['result'];
-                            if (!$apiData['success'] && isset($apiData['data']) && is_array($apiData['data'])) {
+                            if (! $apiData['success'] && isset($apiData['data']) && is_array($apiData['data'])) {
                                 foreach ($apiData['data'] as $apiItem) {
-                                    $taxData = $this->buildTaxErrorData($apiItem);
-                                    if ($taxData) {
-                                        $this->taxRepository->upsert([$taxData], $context);
+                                    $countryData = $this->buildCountryErrorData($apiItem);
+                                    if ($countryData) {
+                                        $this->countryRepository->upsert([$countryData], $context);
                                     }
                                 }
                             }
@@ -189,7 +197,7 @@ class TaxSubscriber implements EventSubscriberInterface
                     }
                 }
             } finally {
-                self::$isProcessingTaxEvent = false;
+                self::$isProcessingCountryEvent = false;
             }
         }
     }
