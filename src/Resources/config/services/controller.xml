@@ -23,40 +23,7 @@
             </call>
         </service>
 
-        <service id="ICTECHOdooShopwareConnector\Controller\DefaultCategoryFetchController" public="true">
-            <argument type="service" id="ICTECHOdooShopwareConnector\Service\CategoryCreate"/>
-            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig"/>
-            <call method="setContainer">
-                <argument type="service" id="service_container"/>
-            </call>
-        </service>
-
-        <service id="ICTECHOdooShopwareConnector\Controller\DefaultCurrencyFetchController" public="true">
-            <argument type="service" id="ICTECHOdooShopwareConnector\Service\CurrencyCreate"/>
-            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig"/>
-            <call method="setContainer">
-                <argument type="service" id="service_container"/>
-            </call>
-        </service>
-
-        <service id="ICTECHOdooShopwareConnector\Controller\DefaultCustomerController" public="true">
-            <argument type="service" id="customer.repository"/>
-            <argument type="service" id="ICTECHOdooShopwareConnector\Service\CustomerService"/>
-            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig"/>
-            <call method="setContainer">
-                <argument type="service" id="service_container"/>
-            </call>
-        </service>
-
-        <service id="ICTECHOdooShopwareConnector\Controller\DefaultOrderSyncController" public="true">
-            <argument type="service" id="order.repository"/>
-            <argument type="service" id="ICTECHOdooShopwareConnector\Service\OrderCreate"/>
-            <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig"/>
-            <call method="setContainer">
-                <argument type="service" id="service_container"/>
-            </call>
-        </service>
-
+    
         <service id="ICTECHOdooShopwareConnector\Controller\CheckAuthController" public="true">
             <argument type="service" id="ICTECHOdooShopwareConnector\Components\Config\PluginConfig"/>
             <call method="setContainer">
