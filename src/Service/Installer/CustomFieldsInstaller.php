@@ -1047,7 +1047,7 @@ class CustomFieldsInstaller
             }
         }
     }
-
+ 
     public function getCustomFieldSetIds($name, $context): array
     {
         $criteria = new Criteria();

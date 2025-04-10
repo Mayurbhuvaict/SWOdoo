@@ -196,7 +196,7 @@ class CustomerSubscriber implements EventSubscriberInterface
         }
         return null;
     }
-
+ 
     public function buildCustomerErrorData($apiItem): ?array
     {
         if (isset($apiItem['id'], $apiItem['odoo_shopware_error'])) {
