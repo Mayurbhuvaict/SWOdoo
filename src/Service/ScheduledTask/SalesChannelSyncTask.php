@@ -8,7 +8,7 @@ class SalesChannelSyncTask extends ScheduledTask
 {
     public static function getTaskName(): string
     {
-        return 'shopware_odoo.sales-channel.sync';
+        return 'shopware_odoo.sales.channel.sync';
     }
 
     public static function getDefaultInterval(): int

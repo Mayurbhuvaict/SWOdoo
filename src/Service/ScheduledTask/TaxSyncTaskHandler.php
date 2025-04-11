@@ -3,7 +3,6 @@
 namespace ICTECHOdooShopwareConnector\Service\ScheduledTask;
 
 use AllowDynamicProperties;
-use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use ICTECHOdooShopwareConnector\Components\Config\PluginConfig;
@@ -20,10 +19,10 @@ class TaxSyncTaskHandler extends ScheduledTaskHandler
     private const MODULE = '/modify/account.tax';
 
     public function __construct(
-        EntityRepository                  $scheduledTaskRepository,
-        private readonly PluginConfig     $pluginConfig,
+        EntityRepository $scheduledTaskRepository,
+        private readonly PluginConfig $pluginConfig,
         private readonly EntityRepository $taxRepository,
-        private readonly LoggerInterface  $logger,
+        private readonly LoggerInterface $logger,
     ) {
         parent::__construct($scheduledTaskRepository);
         $this->client = new Client();
@@ -35,7 +34,7 @@ class TaxSyncTaskHandler extends ScheduledTaskHandler
         $odooUrlData = $this->pluginConfig->fetchPluginConfigUrlData($context);
         $odooUrl = $odooUrlData . self::MODULE;
         $odooToken = $this->pluginConfig->getOdooAccessToken();
-        if ($odooUrl !== "null" && $odooToken) {
+        if ($odooUrl !== 'null' && $odooToken) {
             $taxDataArray = $this->fetchTaxMethodData($context);
             if ($taxDataArray) {
                 $apiResponseData = $this->checkApiAuthentication($odooUrl, $odooToken, $taxDataArray);
@@ -57,7 +56,8 @@ class TaxSyncTaskHandler extends ScheduledTaskHandler
                             }
                         }
                     }
-                    if (!empty($taxToUpsert)) {
+                    if (! $taxToUpsert) {
+                        // if (!empty($taxToUpsert)) {
                         $this->taxRepository->upsert($taxToUpsert, $context);
                     }
                 }
@@ -103,26 +103,26 @@ class TaxSyncTaskHandler extends ScheduledTaskHandler
         }
     }
 
-    private function buildTaxMethodData($apiItem): ?array
+    public function buildTaxMethodData($apiItem): ?array
     {
         if (isset($apiItem['id'], $apiItem['odoo_tax_id'])) {
             return [
-                "id" => $apiItem['id'],
+                'id' => $apiItem['id'],
                 'customFields' => [
                     'odoo_tax_id' => $apiItem['odoo_tax_id'],
                     'odoo_tax_error' => null,
-                    'odoo_tax_update_time' => date("Y-m-d H:i"),
+                    'odoo_tax_update_time' => date('Y-m-d H:i'),
                 ],
             ];
         }
         return null;
     }
 
-    private function buildTaxMethodErrorData($apiItem): ?array
+    public function buildTaxMethodErrorData($apiItem): ?array
     {
         if (isset($apiItem['id'], $apiItem['odoo_shopware_error'])) {
             return [
-                "id" => $apiItem['id'],
+                'id' => $apiItem['id'],
                 'customFields' => [
                     'odoo_tax_error' => $apiItem['odoo_shopware_error'],
                 ],

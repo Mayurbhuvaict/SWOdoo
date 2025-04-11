@@ -4,11 +4,11 @@ namespace ICTECHOdooShopwareConnector\Service\ScheduledTask;
 
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTask;
 
-class SyncCustomerTask extends ScheduledTask
+class CountrySyncTask extends ScheduledTask
 {
     public static function getTaskName(): string
     {
-        return 'shopware_odoo.customer.sync';
+        return 'shopware_odoo.country.sync';
     }
 
     public static function getDefaultInterval(): int

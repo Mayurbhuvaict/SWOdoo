@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace ICTECHOdooShopwareConnector\Service\ScheduledTask;
 
@@ -19,12 +21,11 @@ class ProductManufacturerSyncTaskHandler extends ScheduledTaskHandler
     private const MODULE = '/modify/product.brand';
 
     public function __construct(
-        EntityRepository                  $scheduledTaskRepository,
-        private readonly PluginConfig     $pluginConfig,
+        EntityRepository $scheduledTaskRepository,
+        private readonly PluginConfig $pluginConfig,
         private readonly EntityRepository $productManufacturerRepository,
-        private readonly LoggerInterface  $logger,
-    )
-    {
+        private readonly LoggerInterface $logger,
+    ) {
         parent::__construct($scheduledTaskRepository);
         $this->client = new Client();
     }
@@ -35,7 +36,7 @@ class ProductManufacturerSyncTaskHandler extends ScheduledTaskHandler
         $odooUrlData = $this->pluginConfig->fetchPluginConfigUrlData($context);
         $odooUrl = $odooUrlData . self::MODULE;
         $odooToken = $this->pluginConfig->getOdooAccessToken();
-        if ($odooUrl !== "null" && $odooToken) {
+        if ($odooUrl !== 'null' && $odooToken) {
             $productManufacturerData = $this->fetchManufacturerData($context);
             if ($productManufacturerData) {
                 foreach ($productManufacturerData as $productManufacturer) {
@@ -46,7 +47,7 @@ class ProductManufacturerSyncTaskHandler extends ScheduledTaskHandler
                         $productManufacturerToUpsert = [];
                         if ($apiData['success'] && isset($apiData['data']) && is_array($apiData['data'])) {
                             foreach ($apiData['data'] as $apiItem) {
-                                $productManufacturerData = $this->buildProductManufacturerData($apiItem, $productManufacturerId);;
+                                $productManufacturerData = $this->buildProductManufacturerData($apiItem, $productManufacturerId);
                                 if ($productManufacturerData) {
                                     $productManufacturerToUpsert[] = $productManufacturerData;
                                 }
@@ -60,7 +61,8 @@ class ProductManufacturerSyncTaskHandler extends ScheduledTaskHandler
                             }
                         }
                     }
-                    if (!empty($productManufacturerToUpsert)) {
+                    if (! $productManufacturerToUpsert) {
+                        // if (!empty($productManufacturerToUpsert)) {
                         try {
                             $this->productManufacturerRepository->upsert($productManufacturerToUpsert, $context);
                         } catch (\Exception $e) {
@@ -78,11 +80,29 @@ class ProductManufacturerSyncTaskHandler extends ScheduledTaskHandler
 
     public function fetchManufacturerData($context)
     {
+        $manufacturerDataSend = [];
         $criteria = new Criteria();
         $criteria->addAssociation('translations');
-        $criteria->addAssociation('languages');
         $criteria->addAssociation('media');
-        return $this->productManufacturerRepository->search($criteria, $context)->getElements();
+        // $criteria->addAssociation('product');
+        $productManufacturerData = $this->productManufacturerRepository->search($criteria, $context)->getElements();
+        if ($productManufacturerData) {
+            foreach ($productManufacturerData as $productManufacturer) {
+                $customFields = $productManufacturer->getCustomFields();
+                if ($customFields) {
+                    if (array_key_exists('odoo_manufacturer_id', $customFields)) {
+                        if ($customFields['odoo_manufacturer_id'] === null || $customFields['odoo_manufacturer_id'] === 0) {
+                            $manufacturerDataSend[] = $productManufacturer;
+                        }
+                    } elseif (array_key_exists('odoo_manufacturer_error', $customFields) && $customFields['odoo_manufacturer_error'] === null) {
+                        $manufacturerDataSend[] = $productManufacturer;
+                    }
+                } else {
+                    $manufacturerDataSend[] = $productManufacturer;
+                }
+            }
+        } 
+        return $manufacturerDataSend;
     }
 
     public function checkApiAuthentication($apiUrl, $odooToken, $productManufacturer): ?array
@@ -112,27 +132,28 @@ class ProductManufacturerSyncTaskHandler extends ScheduledTaskHandler
         }
     }
 
-    private function buildProductManufacturerData($apiItem, $productManufacturerId): ?array
+    public function buildProductManufacturerData($apiItem, $productManufacturerId): ?array
     {
         if (isset($apiItem['id'], $apiItem['odoo_manufacturer_id'])) {
             return [
-                "id" => $productManufacturerId,
+                'id' => $productManufacturerId,
                 'customFields' => [
                     'odoo_manufacturer_id' => $apiItem['odoo_manufacturer_id'],
                     'odoo_manufacturer_error' => null,
-                    'odoo_manufacturer_update_time' => date('Y-m-d H:i'),
+                    'shopware_product_brand_update_time' => date('Y-m-d H:i'),
                 ],
             ];
         }
         return null;
     }
 
-    private function buildProductManufacturerErrorData($apiItem): ?array
+    public function buildProductManufacturerErrorData($apiItem): ?array
     {
         if (isset($apiItem['id'], $apiItem['odoo_shopware_error'])) {
             return [
-                "id" => $apiItem['id'],
+                'id' => $apiItem['id'],
                 'customFields' => [
+                    'shopware_product_brand_error' => $apiItem['odoo_shopware_error'],
                     'odoo_manufacturer_error' => $apiItem['odoo_shopware_error'],
                 ],
             ];

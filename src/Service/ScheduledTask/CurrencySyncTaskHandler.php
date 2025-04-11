@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace ICTECHOdooShopwareConnector\Service\ScheduledTask;
 
@@ -20,12 +22,11 @@ class CurrencySyncTaskHandler extends ScheduledTaskHandler
     private const MODULE = '/modify/shopware.currency';
 
     public function __construct(
-        EntityRepository                  $scheduledTaskRepository,
-        private readonly PluginConfig     $pluginConfig,
+        EntityRepository $scheduledTaskRepository,
+        private readonly PluginConfig $pluginConfig,
         private readonly EntityRepository $currencyRepository,
-        private readonly LoggerInterface  $logger,
-    )
-    {
+        private readonly LoggerInterface $logger,
+    ) {
         parent::__construct($scheduledTaskRepository);
         $this->client = new Client();
     }
@@ -36,7 +37,7 @@ class CurrencySyncTaskHandler extends ScheduledTaskHandler
         $odooUrlData = $this->pluginConfig->fetchPluginConfigUrlData($context);
         $odooUrl = $odooUrlData . self::MODULE;
         $odooToken = $this->pluginConfig->getOdooAccessToken();
-        if ($odooUrl !== "null" && $odooToken) {
+        if ($odooUrl !== 'null' && $odooToken) {
             $currencyDataArray = $this->fetchCurrencyData($context);
             if ($currencyDataArray) {
                 foreach ($currencyDataArray as $currency) {
@@ -59,7 +60,7 @@ class CurrencySyncTaskHandler extends ScheduledTaskHandler
                                 }
                             }
                         }
-                        if (!empty($currenciesToUpsert)) {
+                        if (! $currenciesToUpsert) {
                             try {
                                 $this->currencyRepository->upsert($currenciesToUpsert, $context);
                             } catch (\Exception $e) {
@@ -76,21 +77,33 @@ class CurrencySyncTaskHandler extends ScheduledTaskHandler
         }
     }
 
-    public function fetchCurrencyData($context)
+    public function fetchCurrencyData($context): array
     {
+        $currencyData = [];
         $criteria = new Criteria();
         $criteria->addAssociation('translations');
         $criteria->addAssociation('countryRoundings');
         $criteria->addAssociation('salesChannels');
         $criteria->addAssociation('salesChannelDefaultAssignments');
-//        $criteria->addFilter(new EqualsFilter('updateAT',date()));
-//        $criteria->addFilter(new EqualsFilter('customFields.odoo_currency_id', null));
-//        $criteria->addFilter(new NotFilter(
-//            MultiFilter::CONNECTION_AND,
-//            [new EqualsFilter('customFields.odoo_currency_error', null)]
-//        ));
-        return $this->currencyRepository->search($criteria, $context)->getElements();
+        $currencies = $this->currencyRepository->search($criteria, $context)->getElements();
+        if ($currencies) {
+            foreach ($currencies as $currency) {
+                $customFields = $currency->getCustomFields();
+                if ($customFields) {
+                    if (array_key_exists('odoo_currency_id', $customFields) && $customFields['odoo_currency_id'] === null || $customFields['odoo_currency_id'] === 0) {
+                        $currencyData[] = $currency;
+                    } elseif (array_key_exists('odoo_currency_error', $customFields)
+                    || $customFields['odoo_currency_error'] === null) { 
+                        $currencyData[] = $currency;
+                    }
+                } else {
+                    $currencyData[] = $currency;
+                }
+            }
+        }
+        return $currencyData;
     }
+    
 
     public function checkApiAuthentication($apiUrl, $odooToken, $currency): ?array
     {
@@ -119,30 +132,28 @@ class CurrencySyncTaskHandler extends ScheduledTaskHandler
         }
     }
 
-    private function buildCurrencyData($apiItem): ?array
+    public function buildCurrencyData($apiItem): ?array
     {
         if (isset($apiItem['id'], $apiItem['odoo_currency_id'])) {
             return [
-                "id" => $apiItem['id'],
+                'id' => $apiItem['id'],
                 'customFields' => [
                     'odoo_currency_id' => $apiItem['odoo_currency_id'],
                     'odoo_currency_error' => null,
-                    'odoo_currency_update_time' => date("Y-m-d H:i"),
+                    'odoo_currency_update_time' => date('Y-m-d H:i'),
                 ],
             ];
         }
         return null;
     }
 
-    private function buildCurrencyErrorData($apiItem): ?array
+    public function buildCurrencyErrorData($apiItem): ?array
     {
-//        if (isset($apiItem['id'], $apiItem['odoo_currency_error'])) {
         if (isset($apiItem['id'], $apiItem['odoo_shopware_error'])) {
             return [
-                "id" => $apiItem['id'],
+                'id' => $apiItem['id'],
                 'customFields' => [
                     'odoo_currency_error' => $apiItem['odoo_shopware_error'],
-//                    'odoo_currency_error' => $apiItem['odoo_currency_error'],
                 ],
             ];
         }

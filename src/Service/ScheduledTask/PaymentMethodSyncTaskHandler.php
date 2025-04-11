@@ -15,15 +15,15 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
-#[AllowDynamicProperties] #[AsMessageHandler(handles: CategorySyncTask::class)]
-class CategorySyncTaskHandler extends ScheduledTaskHandler
+#[AllowDynamicProperties] #[AsMessageHandler(handles: PaymentMethodSyncTask::class)]
+class PaymentMethodSyncTaskHandler extends ScheduledTaskHandler
 {
-    private const MODULE = '/modify/shopware.category';
+    private const MODULE = '/modify/shopware.payment.methods';
 
     public function __construct(
         EntityRepository $scheduledTaskRepository,
         private readonly PluginConfig $pluginConfig,
-        private readonly EntityRepository $categoryRepository,
+        private readonly EntityRepository $paymentMethodRepository,
         private readonly LoggerInterface $logger,
     ) {
         parent::__construct($scheduledTaskRepository);
@@ -37,36 +37,35 @@ class CategorySyncTaskHandler extends ScheduledTaskHandler
         $odooUrl = $odooUrlData . self::MODULE;
         $odooToken = $this->pluginConfig->getOdooAccessToken();
         if ($odooUrl !== 'null' && $odooToken) {
-            $categoryDataArray = $this->fetchCategoryData($context);
-            if ($categoryDataArray) {
-                $categoriesToUpsert = [];
-                foreach ($categoryDataArray as $category) {
-                    $apiResponseData = $this->checkApiAuthentication($odooUrl, $odooToken, $category);
+            $paymentMethodDataArray = $this->fetchPaymentMethodData($context);
+            if ($paymentMethodDataArray) {
+                $paymentMethodsToUpsert = [];
+                foreach ($paymentMethodDataArray as $paymentMethod) {
+                    $apiResponseData = $this->checkApiAuthentication($odooUrl, $odooToken, $paymentMethod);
                     if ($apiResponseData['result']) {
                         $apiData = $apiResponseData['result'];
                         if ($apiData['success'] && isset($apiData['data']) && is_array($apiData['data'])) {
                             foreach ($apiData['data'] as $apiItem) {
-                                $categoryData = $this->buildCategoryData($apiItem);
-                                if ($categoryData) {
-                                    $categoriesToUpsert[] = $categoryData;
+                                $paymentMethodData = $this->buildPaymentMethodData($apiItem);
+                                if ($paymentMethodData) {
+                                    $paymentMethodsToUpsert[] = $paymentMethodData;
                                 }
                             }
                         } else {
                             foreach ($apiData['data'] ?? [] as $apiItem) {
-                                $categoryData = $this->buildCategoryErrorData($apiItem);
-                                if ($categoryData) {
-                                    $categoriesToUpsert[] = $categoryData;
+                                $paymentMethodData = $this->buildPaymentMethodErrorData($apiItem);
+                                if ($paymentMethodData) {
+                                    $paymentMethodsToUpsert[] = $paymentMethodData;
                                 }
                             }
                         }
-                        if (! $categoriesToUpsert) {
+                        if (! $paymentMethodsToUpsert) {
                             try {
-                                $this->categoryRepository->upsert($categoriesToUpsert, $context);
+                                $this->paymentMethodRepository->upsert($paymentMethodsToUpsert, $context);
                             } catch (\Exception $e) {
-                                $this->logger->error('Error in category sync task', [
+                                $this->logger->error('Error in payment method sync task', [
                                     'exception' => $e,
-                                    'data' => $categoriesToUpsert,
-                                    'payload' => $category,
+                                    'data' => $paymentMethodsToUpsert,
                                     'apiResponse' => $apiData,
                                 ]);
                             }
@@ -77,34 +76,41 @@ class CategorySyncTaskHandler extends ScheduledTaskHandler
         }
     }
 
-    public function fetchCategoryData($context): array
+    public function fetchPaymentMethodData($context): array
     {
-        $categoryData = [];
+        $paymentMethodDataSend = [];
         $criteria = new Criteria();
         $criteria->addAssociation('translations');
-        $criteria->addAssociation('navigationSalesChannels');
-        $criteria->addAssociation('footerSalesChannels');
-        $criteria->addAssociation('serviceSalesChannels');
-        $categories = $this->categoryRepository->search($criteria, $context)->getElements();
-        if ($categories) {
-            foreach ($categories as $category) {
-                $customFields = $category->getCustomFields();
+        $criteria->addAssociation('media');
+        $criteria->addAssociation('availabilityRule');
+        $criteria->addAssociation('salesChannelDefaultAssignments');
+        $criteria->addAssociation('plugin');
+        $criteria->addAssociation('customers');
+        $criteria->addAssociation('orderTransactions');
+        $criteria->addAssociation('salesChannels');
+        $criteria->addAssociation('appPaymentMethod');
+        $paymentMethodDataArray = $this->paymentMethodRepository->search($criteria, $context)->getElements();
+        if ($paymentMethodDataArray) {
+            foreach ($paymentMethodDataArray as $paymentMethodData) {
+                
+                $customFields = $paymentMethodData->getCustomFields();
                 if ($customFields) {
-                    if (array_key_exists('odoo_category_id', $customFields) && $customFields['odoo_category_id'] === null || $customFields['odoo_category_id'] === 0 ) {
-                        $categoryData[] = $category;
-                    } elseif (array_key_exists('odoo_category_error', $customFields)
-                    || $customFields['odoo_category_error'] === null) { 
-                        $categoryData[] = $category;
+                    if (array_key_exists('odoo_payment_method_id', $customFields)) {
+                        if ($customFields['odoo_payment_method_id'] === null || $customFields['odoo_payment_method_id'] === 0) {
+                            $paymentMethodDataSend[] = $paymentMethodData;
+                        }
+                    } elseif (array_key_exists('odoo_payment_method_error', $customFields) && $customFields['odoo_payment_method_error'] === null) {
+                        $paymentMethodDataSend[] = $paymentMethodData;
                     }
                 } else {
-                    $categoryData[] = $category;
+                    $paymentMethodDataSend[] = $paymentMethodData;
                 }
             }
         }
-        return $categoryData;
+        return $paymentMethodDataSend;
     }
 
-    public function checkApiAuthentication($apiUrl, $odooToken, $category): ?array
+    public function checkApiAuthentication($apiUrl, $odooToken, $paymentMethod): ?array
     {
         try {
             $apiResponseData = $this->client->post(
@@ -114,7 +120,7 @@ class CategorySyncTaskHandler extends ScheduledTaskHandler
                         'Content-Type' => 'application/json',
                         'Access-Token' => $odooToken,
                     ],
-                    'json' => $category,
+                    'json' => $paymentMethod,
                 ]
             );
             return json_decode($apiResponseData->getBody()->getContents(), true);
@@ -124,6 +130,7 @@ class CategorySyncTaskHandler extends ScheduledTaskHandler
                 'apiUrl' => $apiUrl,
                 'odooToken' => $odooToken,
             ]);
+
             return [
                 'result' => false,
                 'error' => $e->getMessage(),
@@ -131,28 +138,28 @@ class CategorySyncTaskHandler extends ScheduledTaskHandler
         }
     }
 
-    public function buildCategoryData($apiItem): ?array
+    public function buildPaymentMethodData($apiItem): ?array
     {
-        if (isset($apiItem['id'], $apiItem['odoo_category_id'])) {
+        if (isset($apiItem['id'], $apiItem['odoo_payment_method_id'])) {
             return [
                 'id' => $apiItem['id'],
                 'customFields' => [
-                    'odoo_category_id' => $apiItem['odoo_category_id'],
-                    'odoo_category_error' => null,
-                    'odoo_category_update_time' => date('Y-m-d H:i'),
+                    'odoo_payment_method_id' => $apiItem['odoo_payment_method_id'],
+                    'odoo_payment_method_error' => null,
+                    'odoo_payment_method_update_time' => date('Y-m-d H:i'),
                 ],
             ];
         }
         return null;
     }
 
-    public function buildCategoryErrorData($apiItem): ?array
+    public function buildPaymentMethodErrorData($apiItem): ?array
     {
         if (isset($apiItem['id'], $apiItem['odoo_shopware_error'])) {
             return [
                 'id' => $apiItem['id'],
                 'customFields' => [
-                    'odoo_category_error' => $apiItem['odoo_shopware_error'],
+                    'odoo_payment_method_error' => $apiItem['odoo_shopware_error'],
                 ],
             ];
         }

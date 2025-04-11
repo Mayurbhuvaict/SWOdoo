@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace ICTECHOdooShopwareConnector\Service\ScheduledTask;
 
@@ -20,12 +22,11 @@ class CustomerGroupSyncTaskHandler extends ScheduledTaskHandler
     private const MODULE = '/modify/shopware.customer.group';
 
     public function __construct(
-        EntityRepository                  $scheduledTaskRepository,
-        private readonly PluginConfig     $pluginConfig,
+        EntityRepository $scheduledTaskRepository,
+        private readonly PluginConfig $pluginConfig,
         private readonly EntityRepository $customerGroupRepository,
-        private readonly LoggerInterface  $logger,
-    )
-    {
+        private readonly LoggerInterface $logger,
+    ) {
         parent::__construct($scheduledTaskRepository);
         $this->client = new Client();
     }
@@ -36,8 +37,9 @@ class CustomerGroupSyncTaskHandler extends ScheduledTaskHandler
         $odooUrlData = $this->pluginConfig->fetchPluginConfigUrlData($context);
         $odooUrl = $odooUrlData . self::MODULE;
         $odooToken = $this->pluginConfig->getOdooAccessToken();
-        if ($odooUrl !== "null" && $odooToken) {
+        if ($odooUrl !== 'null' && $odooToken) {
             $customerGroupDataArray = $this->fetchCustomerGroupData($context);
+            dd($customerGroupDataArray);
             if ($customerGroupDataArray) {
                 foreach ($customerGroupDataArray as $customerGroup) {
                     $apiResponseData = $this->checkApiAuthentication($odooUrl, $odooToken, $customerGroup);
@@ -59,7 +61,7 @@ class CustomerGroupSyncTaskHandler extends ScheduledTaskHandler
                                 }
                             }
                         }
-                        if (!empty($customerGroupToUpsert)) {
+                        if (! $customerGroupToUpsert) {
                             $this->customerGroupRepository->upsert($customerGroupToUpsert, $context);
                         }
                     }
@@ -70,10 +72,30 @@ class CustomerGroupSyncTaskHandler extends ScheduledTaskHandler
 
     public function fetchCustomerGroupData($context)
     {
+        $customerGroupArray = [];
         $criteria = new Criteria();
         $criteria->addAssociation('translations');
-        $criteria->addAssociation('languages');
         $criteria->addAssociation('salesChannels');
+        $criteria->addAssociation('customers');
+        $criteria->addAssociation('salesChannels');
+        $criteria->addAssociation('registrationSalesChannels');
+        $customerGroupData =  $this->customerGroupRepository->search($criteria, $context)->getElements();
+        if ($customerGroupData) {
+            foreach ($customerGroupData as $customerGroup) {
+                $customFields = $customerGroup->getCustomFields();
+                if ($customFields) {
+                    if (array_key_exists('odoo_customer_group_id', $customFields) && $customFields['odoo_customer_group_id'] === null || $customFields['odoo_customer_group_id'] === 0) {
+                        $customerGroupArray[] = $customerGroup;
+                    } elseif (array_key_exists('odoo_customer_group_error', $customFields)
+                    || $customFields['odoo_customer_group_error'] === null) { 
+                        $customerGroupArray[] = $customerGroup;
+                    }
+                } else {
+                    $customerGroupArray[] = $customerGroup;
+                }
+            }
+            return $customerGroupArray;
+        }
         return $this->customerGroupRepository->search($criteria, $context)->getElements();
     }
 
@@ -104,26 +126,26 @@ class CustomerGroupSyncTaskHandler extends ScheduledTaskHandler
         }
     }
 
-    private function buildCustomerGroupData($apiItem): ?array
+    public function buildCustomerGroupData($apiItem): ?array
     {
         if (isset($apiItem['id'], $apiItem['odoo_customer_group_id'])) {
             return [
-                "id" => $apiItem['id'],
+                'id' => $apiItem['id'],
                 'customFields' => [
                     'odoo_customer_group_id' => $apiItem['odoo_customer_group_id'],
                     'odoo_customer_group_error' => null,
-                    'odoo_customer_group_update_time' => date("Y-m-d H:i"),
+                    'odoo_customer_group_update_time' => date('Y-m-d H:i'),
                 ],
             ];
         }
         return null;
     }
 
-    private function buildCustomerGroupErrorData($apiItem): ?array
+    public function buildCustomerGroupErrorData($apiItem): ?array
     {
         if (isset($apiItem['id'], $apiItem['odoo_shopware_error'])) {
             return [
-                "id" => $apiItem['id'],
+                'id' => $apiItem['id'],
                 'customFields' => [
                     'odoo_customer_group_error' => $apiItem['odoo_shopware_error'],
                 ],

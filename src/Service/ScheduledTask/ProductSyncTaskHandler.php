@@ -1,9 +1,10 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace ICTECHOdooShopwareConnector\Service\ScheduledTask;
 
 use AllowDynamicProperties;
-use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use ICTECHOdooShopwareConnector\Components\Config\PluginConfig;
@@ -12,7 +13,6 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
@@ -22,12 +22,11 @@ class ProductSyncTaskHandler extends ScheduledTaskHandler
     private const MODULE = '/modify/shopware.product';
 
     public function __construct(
-        EntityRepository                  $scheduledTaskRepository,
-        private readonly PluginConfig     $pluginConfig,
+        EntityRepository $scheduledTaskRepository,
+        private readonly PluginConfig $pluginConfig,
         private readonly EntityRepository $productRepository,
-        private readonly LoggerInterface  $logger,
-    )
-    {
+        private readonly LoggerInterface $logger,
+    ) {
         parent::__construct($scheduledTaskRepository);
         $this->client = new Client();
     }
@@ -38,7 +37,7 @@ class ProductSyncTaskHandler extends ScheduledTaskHandler
         $odooUrlData = $this->pluginConfig->fetchPluginConfigUrlData($context);
         $odooUrl = $odooUrlData . self::MODULE;
         $odooToken = $this->pluginConfig->getOdooAccessToken();
-        if ($odooUrl !== "null" && $odooToken) {
+        if ($odooUrl !== 'null' && $odooToken) {
             $productDataArray = $this->fetchProductData($context);
             if ($productDataArray) {
                 foreach ($productDataArray as $product) {
@@ -61,7 +60,7 @@ class ProductSyncTaskHandler extends ScheduledTaskHandler
                                 }
                             }
                         }
-                        if (!empty($productToUpsert)) {
+                        if (! $productToUpsert) {
                             $this->productRepository->upsert($productToUpsert, $context);
                         }
                     }
@@ -97,26 +96,26 @@ class ProductSyncTaskHandler extends ScheduledTaskHandler
         }
     }
 
-    private function buildProductData($apiItem): ?array
+    public function buildProductData($apiItem): ?array
     {
         if (isset($apiItem['id'], $apiItem['odoo_product_id'])) {
             return [
-                "id" => $apiItem['id'],
+                'id' => $apiItem['id'],
                 'customFields' => [
                     'odoo_product_id' => $apiItem['odoo_product_id'],
                     'odoo_product_error' => null,
-                    'odoo_product_update_time' => date("Y-m-d H:i"),
+                    'odoo_product_update_time' => date('Y-m-d H:i'),
                 ],
             ];
         }
         return null;
     }
 
-    private function buildProductErrorData($apiItem): ?array
+    public function buildProductErrorData($apiItem): ?array
     {
         if (isset($apiItem['id'], $apiItem['odoo_shopware_error'])) {
             return [
-                "id" => $apiItem['id'],
+                'id' => $apiItem['id'],
                 'customFields' => [
                     'odoo_product_error' => $apiItem['odoo_shopware_error'],
                 ],
@@ -125,8 +124,9 @@ class ProductSyncTaskHandler extends ScheduledTaskHandler
         return null;
     }
 
-    public function fetchProductData($context): ?Entity
+    public function fetchProductData($context): array
     {
+        $productDataSend = [];
         $criteria = new Criteria();
         $context->setConsiderInheritance(true);
         $criteria->addAssociation('translations');
@@ -176,6 +176,23 @@ class ProductSyncTaskHandler extends ScheduledTaskHandler
         $criteria->addAssociation('seoUrls');
         $criteria->addAssociation('wishlists');
         $criteria->addAssociation('customFieldSets');
-        return $this->productRepository->search($criteria, $context)->first();
+        $productDataArray = $this->productRepository->search($criteria, $context)->getElements();
+        if ($productDataArray) {
+            foreach ($productDataArray as $productData) {
+                $customFields = $productData->getCustomFields();
+                if ($customFields) {
+                    if (array_key_exists('odoo_product_id', $customFields)) {
+                        if ($customFields['odoo_product_id'] === null || $customFields['odoo_product_id'] === 0) {
+                            $productDataSend[] = $productData;
+                        }
+                    } elseif (array_key_exists('odoo_product_error', $customFields) && $customFields['odoo_product_error'] === null) {
+                        $productDataSend[] = $productData;
+                    }
+                } else {
+                    $productDataSend[] = $productData;
+                }
+            }
+        } 
+        return $productDataSend;
     }
 }

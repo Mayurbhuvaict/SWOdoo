@@ -8,7 +8,7 @@ class DeliveryTimeSyncTask extends ScheduledTask
 {
     public static function getTaskName(): string
     {
-        return 'shopware_odoo.delivery-time.sync';
+        return 'shopware_odoo.delivery.time.sync';
     }
 
     public static function getDefaultInterval(): int

@@ -3,7 +3,6 @@
 namespace ICTECHOdooShopwareConnector\Service\ScheduledTask;
 
 use AllowDynamicProperties;
-use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use ICTECHOdooShopwareConnector\Components\Config\PluginConfig;
@@ -20,10 +19,10 @@ class ShippingMethodSyncTaskHandler extends ScheduledTaskHandler
     private const MODULE = '/modify/shopware.shipping.method';
 
     public function __construct(
-        EntityRepository                  $scheduledTaskRepository,
-        private readonly PluginConfig     $pluginConfig,
+        EntityRepository $scheduledTaskRepository,
+        private readonly PluginConfig $pluginConfig,
         private readonly EntityRepository $shippingMethodRepository,
-        private readonly LoggerInterface  $logger,
+        private readonly LoggerInterface $logger,
     ) {
         parent::__construct($scheduledTaskRepository);
         $this->client = new Client();
@@ -35,7 +34,7 @@ class ShippingMethodSyncTaskHandler extends ScheduledTaskHandler
         $odooUrlData = $this->pluginConfig->fetchPluginConfigUrlData($context);
         $odooUrl = $odooUrlData . self::MODULE;
         $odooToken = $this->pluginConfig->getOdooAccessToken();
-        if ($odooUrl !== "null" && $odooToken) {
+        if ($odooUrl !== 'null' && $odooToken) {
             $shippingMethodDataArray = $this->fetchShippingMethodData($context);
             if ($shippingMethodDataArray) {
                 foreach ($shippingMethodDataArray as $shippingMethodData) {
@@ -58,7 +57,7 @@ class ShippingMethodSyncTaskHandler extends ScheduledTaskHandler
                                 }
                             }
                         }
-                        if (!empty($shippingMethodToUpsert)) {
+                        if (! $shippingMethodToUpsert) {
                             try {
                                 $this->shippingMethodRepository->upsert($shippingMethodToUpsert, $context);
                             } catch (\Exception $e) {
@@ -77,12 +76,30 @@ class ShippingMethodSyncTaskHandler extends ScheduledTaskHandler
 
     public function fetchShippingMethodData($context)
     {
+        $shipppingMethoDataSend = [];
         $criteria = new Criteria();
         $criteria->addAssociation('translations');
         $criteria->addAssociation('prices');
         $criteria->addAssociation('media');
         $criteria->addAssociation('salesChannels');
-        return $this->shippingMethodRepository->search($criteria, $context)->getElements();
+        $shippingMethodArray = $this->shippingMethodRepository->search($criteria, $context)->getElements();
+        if ($shippingMethodArray) {
+            foreach ($shippingMethodArray as $shippingMethod) {
+                $customFields = $shippingMethod->getCustomFields();
+                if ($customFields) {
+                    if (array_key_exists('odoo_shipping_method_id', $customFields)) {
+                        if ($customFields['odoo_shipping_method_id'] === null || $customFields['odoo_shipping_method_id'] === 0) {
+                            $shippingMethodSend[] = $shippingMethod;
+                        }
+                    } elseif (array_key_exists('odoo_shipping_method_error', $customFields) && $customFields['odoo_shipping_method_error'] === null) {
+                        $shippingMethodSend[] = $shippingMethod;
+                    }
+                } else {
+                    $shippingMethodSend[] = $shippingMethod;
+                }
+            }
+        } 
+        return $shippingMethodArray;
     }
 
     public function checkApiAuthentication($apiUrl, $odooToken, $shippingMethod): ?array
@@ -112,26 +129,26 @@ class ShippingMethodSyncTaskHandler extends ScheduledTaskHandler
         }
     }
 
-    private function buildShippingMethodData($apiItem): ?array
+    public function buildShippingMethodData($apiItem): ?array
     {
         if (isset($apiItem['id'], $apiItem['odoo_shipping_method_id'])) {
             return [
-                "id" => $apiItem['id'],
+                'id' => $apiItem['id'],
                 'customFields' => [
-                    'odoo_shipping_method' => $apiItem['odoo_shipping_method_id'],
+                    'odoo_shipping_method_id' => $apiItem['odoo_shipping_method_id'],
                     'odoo_shipping_method_error' => null,
-                    'odoo_shipping_method_update_time' => date("Y-m-d H:i"),
+                    'odoo_shipping_method_update_time' => date('Y-m-d H:i'),
                 ],
             ];
         }
         return null;
     }
 
-    private function buildShippingMethodErrorData($apiItem): ?array
+    public function buildShippingMethodErrorData($apiItem): ?array
     {
         if (isset($apiItem['id'], $apiItem['odoo_shopware_error'])) {
             return [
-                "id" => $apiItem['id'],
+                'id' => $apiItem['id'],
                 'customFields' => [
                     'odoo_shipping_method_error' => $apiItem['odoo_shopware_error'],
                 ],

@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace ICTECHOdooShopwareConnector\Service\ScheduledTask;
 
@@ -13,15 +15,15 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
-#[AllowDynamicProperties] #[AsMessageHandler(handles: SalesChannelSyncTask::class)]
-class SalesChannelSyncTaskHandler extends ScheduledTaskHandler
+#[AllowDynamicProperties] #[AsMessageHandler(handles: CountrySyncTask::class)]
+class CountrySyncTaskHandler extends ScheduledTaskHandler
 {
-    private const MODULE = '/modify/shopware.sales.channel';
+    private const MODULE = '/modify/shopware.country';
 
     public function __construct(
         EntityRepository $scheduledTaskRepository,
         private readonly PluginConfig $pluginConfig,
-        private readonly EntityRepository $salesChannelRepository,
+        private readonly EntityRepository $countryRepository,
         private readonly LoggerInterface $logger,
     ) {
         parent::__construct($scheduledTaskRepository);
@@ -35,35 +37,37 @@ class SalesChannelSyncTaskHandler extends ScheduledTaskHandler
         $odooUrl = $odooUrlData . self::MODULE;
         $odooToken = $this->pluginConfig->getOdooAccessToken();
         if ($odooUrl !== 'null' && $odooToken) {
-            $salesChannelDataArray = $this->fetchSalesChannelData($context);
-            if ($salesChannelDataArray) {
-                foreach ($salesChannelDataArray as $salesChannel) {
-                    $apiResponseData = $this->checkApiAuthentication($odooUrl, $odooToken, $salesChannel);
+            $countryDataArray = $this->fetchCountryData($context);
+            if ($countryDataArray) {
+                $countriesToUpsert = [];
+                dd($countryDataArray);
+                foreach ($countryDataArray as $country) {
+                    $apiResponseData = $this->checkApiAuthentication($odooUrl, $odooToken, $country);
                     if ($apiResponseData['result']) {
                         $apiData = $apiResponseData['result'];
-                        $salesChannelsToUpsert = [];
                         if ($apiData['success'] && isset($apiData['data']) && is_array($apiData['data'])) {
                             foreach ($apiData['data'] as $apiItem) {
-                                $salesChannelData = $this->buildSalesChannelData($apiItem);
-                                if ($salesChannelData) {
-                                    $salesChannelsToUpsert[] = $salesChannelData;
+                                $countryData = $this->buildCountryData($apiItem);
+                                if ($countryData) {
+                                    $countriesToUpsert[] = $countryData;
                                 }
                             }
                         } else {
                             foreach ($apiData['data'] ?? [] as $apiItem) {
-                                $salesChannelData = $this->buildSalesChannelErrorData($apiItem);
-                                if ($salesChannelData) {
-                                    $salesChannelsToUpsert[] = $salesChannelData;
+                                $countryData = $this->buildCountryErrorData($apiItem);
+                                if ($countryData) {
+                                    $countriesToUpsert[] = $countryData;
                                 }
                             }
                         }
-                        if (! $salesChannelsToUpsert) {
+                        if (! $countriesToUpsert) {
                             try {
-                                $this->salesChannelRepository->upsert($salesChannelsToUpsert, $context);
+                                $this->countryRepository->upsert($countriesToUpsert, $context);
                             } catch (\Exception $e) {
-                                $this->logger->error('Error in sales-channel task', [
+                                $this->logger->error('Error in country sync task', [
                                     'exception' => $e,
-                                    'data' => $salesChannelsToUpsert,
+                                    'data' => $countriesToUpsert,
+                                    'payload' => $country,
                                     'apiResponse' => $apiData,
                                 ]);
                             }
@@ -74,36 +78,41 @@ class SalesChannelSyncTaskHandler extends ScheduledTaskHandler
         }
     }
 
-    public function fetchSalesChannelData($context): array
+    public function fetchCountryData($context): array
     {
-        $salesChannelDataSend = [];
+        $countryData = [];
         $criteria = new Criteria();
+        $criteria->addAssociation('states');
+        $criteria->addAssociation('states.country');
+        $criteria->addAssociation('states.translations');
         $criteria->addAssociation('translations');
-        $criteria->addAssociation('languages');
-        $criteria->addAssociation('navigationSalesChannels');
-        $criteria->addAssociation('footerSalesChannels');
-        $criteria->addAssociation('serviceSalesChannels');
-        $salesChannelDataArray = $this->salesChannelRepository->search($criteria, $context)->getElements();
-        if ($salesChannelDataArray) {
-            foreach ($salesChannelDataArray as $salesChannelData) {
-                $customFields = $salesChannelData->getCustomFields();
+        // $criteria->addAssociation('countryStates');
+        $criteria->addAssociation('customerAddresses');
+        $criteria->addAssociation('orderAddresses');
+        $criteria->addAssociation('salesChannelDefaultAssignments');
+        $criteria->addAssociation('salesChannels');
+        $criteria->addAssociation('taxRules');
+        $criteria->addAssociation('currencyCountryRoundings');
+        $countries = $this->countryRepository->search($criteria, $context)->getElements();
+        if ($countries) {
+            foreach ($countries as $country) {
+                $customFields = $country->getCustomFields();
                 if ($customFields) {
-                    if (array_key_exists('odoo_sales_channel_id', $customFields)) {
-                        if ($customFields['odoo_sales_channel_id'] === null || $customFields['odoo_sales_channel_id'] === 0) {
-                            $salesChannelDataSend[] = $salesChannelData;
-                        }
-                    } elseif (array_key_exists('odoo_sales_channel_error', $customFields) && $customFields['odoo_sales_channel_error'] === null) {
-                        $salesChannelDataSend[] = $salesChannelData;
+                    if (array_key_exists('odoo_country_id', $customFields) && $customFields['odoo_country_id'] === null || $customFields['odoo_country_id'] === 0) {
+                        $countryData[] = $country;
+                    } elseif (array_key_exists('odoo_country_error', $customFields)
+                    || $customFields['odoo_country_error'] === null) { 
+                        $countryData[] = $country;
                     }
                 } else {
-                    $salesChannelDataSend[] = $salesChannelData;
+                    $countryData[] = $country;
                 }
             }
-        } 
-        return $salesChannelDataArray;
+        }
+        return $countryData;
     }
 
-    public function checkApiAuthentication($apiUrl, $odooToken, $salesChannel): ?array
+    public function checkApiAuthentication($apiUrl, $odooToken, $country): ?array
     {
         try {
             $apiResponseData = $this->client->post(
@@ -113,7 +122,7 @@ class SalesChannelSyncTaskHandler extends ScheduledTaskHandler
                         'Content-Type' => 'application/json',
                         'Access-Token' => $odooToken,
                     ],
-                    'json' => $salesChannel,
+                    'json' => $country,
                 ]
             );
             return json_decode($apiResponseData->getBody()->getContents(), true);
@@ -130,28 +139,28 @@ class SalesChannelSyncTaskHandler extends ScheduledTaskHandler
         }
     }
 
-    public function buildSalesChannelData($apiItem): ?array
+    public function buildCountryData($apiItem): ?array
     {
-        if (isset($apiItem['id'], $apiItem['odoo_sales_channel_id'])) {
+        if (isset($apiItem['id'], $apiItem['odoo_country_id'])) {
             return [
                 'id' => $apiItem['id'],
                 'customFields' => [
-                    'odoo_sales_channel_id' => $apiItem['odoo_sales_channel_id'],
-                    'odoo_sales_channel_error' => null,
-                    'odoo_sales_channel_update_time' => date('Y-m-d H:i'),
+                    'odoo_country_id' => $apiItem['odoo_country_id'],
+                    'odoo_country_error' => null,
+                    'odoo_country_update_time' => date('Y-m-d H:i'),
                 ],
             ];
         }
         return null;
     }
 
-    public function buildSalesChannelErrorData($apiItem): ?array
+    public function buildCountryErrorData($apiItem): ?array
     {
         if (isset($apiItem['id'], $apiItem['odoo_shopware_error'])) {
             return [
                 'id' => $apiItem['id'],
                 'customFields' => [
-                    'odoo_sales_channel_error' => $apiItem['odoo_shopware_error'],
+                    'odoo_country_error' => $apiItem['odoo_shopware_error'],
                 ],
             ];
         }
